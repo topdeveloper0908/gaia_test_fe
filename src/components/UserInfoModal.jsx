@@ -31,10 +31,10 @@ export default function UserInfoModal({ open, handleClose, user }) {
       aria-describedby="parent-modal-description"
       sx={{
         color: "black",
+        py: 10,
         overflow: "scroll",
         border: "none",
         outline: "none",
-        mx: 2
       }}
     >
       <Box
@@ -44,13 +44,12 @@ export default function UserInfoModal({ open, handleClose, user }) {
           top: "50%",
           transform: "translate(-50%, -50%)",
           bgcolor: "white",
-          p: 4,
+          borderRadius: 4,
+          p: 10,
           outline: "none",
           boxShadow: 24,
           width: "fit-content",
-          maxHeight: "30rem",
-          overflowY: "scroll",
-          position: 'relative'
+          position: "relative",
         }}
       >
         <IconButton
@@ -211,10 +210,6 @@ export default function UserInfoModal({ open, handleClose, user }) {
                 href={user.meetinglink}
                 variant="contained"
                 co="correctValue"
-                onClick={(e) => {
-                  // stop propagation to prevent the page from scrolling to the top
-                  e.stopPropagation();
-                }}
               >
                 Schedule a Meeting
               </Button>

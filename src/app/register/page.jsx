@@ -182,24 +182,7 @@ export default function SignUp() {
             <img src="../img/logo-1.png" alt="logo" width="300" />
           </Box>
           <Box
-            mt={4}
-            sx={{
-              width: "70%",
-              minWidth: "300px",
-            }}
-          >
-            <iframe
-              style={{
-                // width: "500px",
-                height: "281px",
-                width: "100%",
-                borderRadius: ".3rem",
-              }}
-              src="https://player.vimeo.com/video/67733848?title=0&amp;byline=0&amp;portrait=0&amp;color=44b4ad"
-            ></iframe>
-          </Box>
-          <Box
-            mt={4}
+            mt={6}
             display="flex"
             justifyContent="center"
             alignItems="center"

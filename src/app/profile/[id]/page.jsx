@@ -169,16 +169,17 @@ export default function Profile({ params }) {
                         />
                       }
                     />
-                    <Button
-                      href={data.meetinglink}
-                      sx={{ mt: 2 }}
-                      variant="contained"
-                      co="correctValue"
-                    >
-                      <Typography fontSize={"30px"}>
-                        Reserve Your Biofield Scan
-                      </Typography>
-                    </Button>
+                    <AnchorLink href="#profile-section">
+                      <Button
+                        sx={{ mt: 2 }}
+                        variant="contained"
+                        co="correctValue"
+                      >
+                        <Typography fontSize={"30px"}>
+                          Reserve Your Biofield Scan
+                        </Typography>
+                      </Button>
+                    </AnchorLink>
                   </Stack>
                 </Grid>
                 <Grid item md={6}>
@@ -362,28 +363,7 @@ export default function Profile({ params }) {
                   <source src="../video/intro.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
-                <AnchorLink href="#profile-section">
-                  <Button
-                    className="w-100"
-                    sx={{ mt: 4 }}
-                    variant="contained"
-                    co="correctValue"
-                  >
-                    <Stack
-                      alignItems={"center"}
-                      justifyContent={"center"}
-                      direction={"column"}
-                    >
-                      <Typography fontSize={"30px"}>
-                        Reserve Your Spot!
-                      </Typography>
-                      <Typography fontSize={"17px"} sx={{ opacity: 0.7 }}>
-                        Limited Appointments Available.
-                      </Typography>
-                    </Stack>
-                  </Button>
-                </AnchorLink>
-                <Box mt={4} pt={2}>
+                <Box mt={2} pt={2}>
                   <Stack direction={"row"} alignItems={"flex-start"} mt={2}>
                     <Stack
                       alignItems={"center"}

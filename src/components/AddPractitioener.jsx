@@ -104,7 +104,7 @@ export default function AddPractitioner({
     specialty: "",
     tags: "",
     rank: 1,
-    review: 1,
+    review: 0,
     meetinglink: "",
     profileLink: "",
     status: "pending",
@@ -136,9 +136,7 @@ export default function AddPractitioner({
       setIsSubmitting(false);
       return;
     }
-    const response = await axios.post(
-      `${API_URL}admin_new`,
-      JSON.stringify(values),
+    const response = await axios.post(`${API_URL}admin_new`, JSON.stringify(values),
       {
         headers: {
           "Content-Type": "application/json",
@@ -147,17 +145,7 @@ export default function AddPractitioner({
     );
 
     const result = response.data;
-    if (result == "success") {
-      toast.success("Practitioner registered successfully!", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      addPractitioner(values);
-    } else if (result == "duplicated") {
+    if (result == "duplicated") {
       toast.error("Practitioner already exists!", {
         position: "top-center",
         autoClose: 5000,
@@ -166,6 +154,17 @@ export default function AddPractitioner({
         pauseOnHover: true,
         draggable: true,
       });
+    } else {
+      toast.success("Practitioner registered successfully!", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      values.id=result;
+      addPractitioner(values);
     }
     setIsSubmitting(false);
   };
@@ -514,9 +513,11 @@ export default function AddPractitioner({
               id="review"
               label="Review"
               name="review"
+              disabled = {isUser ? true : false}
               onChange={formik.handleChange}
               value={formik.values.review}
             >
+              <MenuItem value="0">0</MenuItem>
               <MenuItem value="1">1</MenuItem>
               <MenuItem value="2">2</MenuItem>
               <MenuItem value="3">3</MenuItem>
@@ -537,6 +538,7 @@ export default function AddPractitioner({
               id="rank"
               label="Rank"
               name="rank"
+              disabled = {isUser ? true : false}
               onChange={formik.handleChange}
               value={formik.values.rank}
             >

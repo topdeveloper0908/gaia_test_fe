@@ -6,6 +6,7 @@ import Drawer from "@mui/material/Drawer";
 import CssBaseline from "@mui/material/CssBaseline";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
+import TextField from "@mui/material/TextField";
 import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
@@ -20,16 +21,14 @@ import ListItemText from "@mui/material/ListItemText";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import { Avatar, Button, Stack } from "@mui/material";
-import { Add, House, Logout } from "@mui/icons-material";
+import { Add, House, Logout, User } from "@mui/icons-material";
 import CustomTable from "@/components/CustomTable";
-import CustomerTable from "@/components/CustomerTable";
 import axios from "axios";
 import Cookies from "js-cookie";
 import Loading from "@/components/Loading";
 import { API_URL } from "@/constants/constants";
 import { toast } from "react-toastify";
 import EditModal from "@/components/EditModal";
-import EditCustomerModal from "@/components/EditCustomerModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import * as XLSX from "xlsx";
 import AddPractitioner from "@/components/AddPractitioener";
@@ -57,19 +56,19 @@ const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   })
 );
 
-export default function Dashboard({ isUser }) {
+export default function Dashboard({ isUser, isCustomer }) {
   const theme = useTheme();
   const [loading, setLoading] = React.useState(true);
   const [open, setOpen] = React.useState(true);
   const [data, setData] = React.useState([]);
-  const [customerData, setCustomerData] = React.useState([]);
+  const [dataTmp, setDataTmp] = React.useState([]);
+  const [search, setSearch] = React.useState('');
   const [userProfile, setuserProfile] = React.useState({});
   const token = Cookies.get("token");
   const [openEditModal, setOpenEditModal] = React.useState(false);
   const [editUser, setEditUser] = React.useState({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [deleteUser, setDeleteUser] = React.useState({});
-  const [deleteCustomer, setDeleteCustomer] = React.useState({});
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [openDeleteModal, setOpenDeleteModal] = React.useState(false);
   const [page, setPage] = React.useState("home");
@@ -85,7 +84,7 @@ export default function Dashboard({ isUser }) {
   };
 
   const handleDeleteModal = (user) => {
-    setDeleteCustomer(user);
+    setDeleteUser(user);
     setOpenDeleteModal(true);
   };
 
@@ -205,6 +204,7 @@ export default function Dashboard({ isUser }) {
           if (result == "success") {
             toast.success("Data uploaded successfully");
             setOpenUploadModal(false);
+
             getData();
           }
         }
@@ -239,37 +239,10 @@ export default function Dashboard({ isUser }) {
             return user;
           });
           setData(newData);
+          setDataTmp(newData);
           setOpenEditModal(false);
         } else {
           setuserProfile(newuser);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        toast.error("Failed to update user");
-      });
-    setIsSubmitting(false);
-  };
-
-  const handleSaveCustomer = async (newCustomer) => {
-    setIsSubmitting(true);
-    await axios
-      .post(`${API_URL}customer/update`, newCustomer)
-      .then((res) => {
-        toast.success(
-          `Customer updated successfully`
-        );
-        if (isUser) {
-          setOpenEditModal(false);
-          // set new data
-          let newData = customerData.map((user) => {
-            if (user.id == newCustomer.id) {
-              return newCustomer;
-            }
-          });
-          setCustomerData(newData);
-        } else {
-          setuserProfile(newCustomer);
         }
       })
       .catch((err) => {
@@ -299,41 +272,12 @@ export default function Dashboard({ isUser }) {
         // set new data
         let newData = data.filter((user) => user.id != userId);
         setData(newData);
+        setDataTmp(newData);
         setOpenDeleteModal(false);
       })
       .catch((err) => {
         console.log(err);
         toast.error("Failed to delete user");
-      });
-    setIsDeleting(false);
-  };
-
-  const handleDeleteCustomer = async (customerId) => {
-    setIsDeleting(true);
-    console.log('selected', customerId);
-    await axios
-      .post(
-        `${API_URL}customer/remove`,
-        {
-          id: customerId,
-        },
-        {
-          headers: {
-            Authorization: `${token}`,
-          },
-        }
-      )
-      .then((res) => {
-        toast.success("Customer deleted successfully");
-        setOpenDeleteModal(false);
-        // set new data
-        let newData = customerData.filter((user) => user.id != customerId);
-        setCustomerData(newData);
-        setOpenDeleteModal(false);
-      })
-      .catch((err) => {
-        console.log(err);
-        toast.error("Failed to delete customer");
       });
     setIsDeleting(false);
   };
@@ -346,7 +290,9 @@ export default function Dashboard({ isUser }) {
         },
       })
       .then((res) => {
+        console.log('res', res.data);
         setData(res.data);
+        setDataTmp(res.data);
       })
       .catch((err) => {
         if (err?.response?.status === 403) {
@@ -376,32 +322,8 @@ export default function Dashboard({ isUser }) {
     setLoading(false);
   };
 
-  const getCustomers = async () => {
-    await axios
-      .get(`${API_URL}user/customers`, {
-        headers: {
-          Authorization: `${token}`,
-        },
-      })
-      .then((res) => {
-        setCustomerData(res.data);
-      })
-      .catch((err) => {
-        if (err?.response?.status === 403) {
-          window.location.href = "/login";
-        }
-        console.log(err);
-      });
-    setLoading(false);
-  };
-
   React.useEffect(() => {
-    if(!isUser) {
-      getData();
-    } else {
-      getUser();
-      getCustomers();
-    }
+    !isUser ? getData() : getUser();
   }, []);
 
   const handleDrawerOpen = () => {
@@ -410,11 +332,32 @@ export default function Dashboard({ isUser }) {
 
   function addPractitioner(practitioner) {
     setData([...data, practitioner]);
+    setDataTmp([...dataTmp, practitioner]);
   }
 
-  function addCustomer(customer) {
-    setCustomerData([...customerData, customer]);
+  const searchPractitioner = (event) => {
+    setData(dataTmp);
+    setSearch(event.target.value)
   }
+
+  React.useEffect(() => {
+    if(search === '') {
+      return;
+    } else {
+      var tmp = [];
+      data.forEach(element => {
+        if( element.firstname.toLowerCase().indexOf(search) > -1 || 
+            element.lastname.toLowerCase().indexOf(search) > -1 ||
+            element.specialty.toLowerCase().indexOf(search) > -1 || 
+            element.tags.toLowerCase().indexOf(search) > -1 ||
+            element.city.toLowerCase().indexOf(search) > -1 || 
+            element.address.toLowerCase().indexOf(search) > -1) {
+          tmp.push(element);
+        }
+      });
+      setData(tmp);
+    }
+  }, [search]);
 
   return loading ? (
     <Loading />
@@ -447,25 +390,6 @@ export default function Dashboard({ isUser }) {
           />
         </>
       )}
-      {isUser && (
-        <>
-          <EditCustomerModal
-            open={openEditModal}
-            handleConfirm={handleSaveCustomer}
-            handleClose={() => setOpenEditModal(false)}
-            user={editUser}
-            setUser={setEditUser}
-            isSubmitting={isSubmitting}
-          />
-          <ConfirmDeleteModal
-            open={openDeleteModal}
-            handleConfirm={handleDeleteCustomer}
-            handleClose={() => setOpenDeleteModal(false)}
-            isDeleting={isDeleting}
-            user={deleteCustomer}
-          />
-        </>
-      )}
       <Sidebar
         open={open}
         handleDrawerClose={handleDrawerOpen}
@@ -473,6 +397,7 @@ export default function Dashboard({ isUser }) {
         setPage={setPage}
         page={page}
         isUser={isUser}
+        isCustomer={isCustomer}
         userProfile={userProfile}
       />
       <Main open={open}>
@@ -504,15 +429,31 @@ export default function Dashboard({ isUser }) {
               <Stack direction="row" justifyContent={"space-between"}>
                 <h3>Practitioner List</h3>
 
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => {
-                    setOpenUploadModal(true);
-                  }}
-                >
-                  Upload Excel
-                </Button>
+                <Stack alignItems={'center'} direction="row">
+                  <TextField
+                    size="small"
+                    fullWidth
+                    id="searchWord"
+                    label="Search...."
+                    name="searchWord"
+                    autoComplete="searchWord"
+                    autoFocus
+                    type="text"
+                    onChange={searchPractitioner}
+                    value={search}
+                  />
+                  <Box mr={1}></Box>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      setOpenUploadModal(true);
+                    }}
+                    style={{whiteSpace: 'nowrap', width: '10rem'}}
+                  >
+                    Upload Excel
+                  </Button>
+                </Stack>
               </Stack>
               <Box sx={{ my: 2 }}>
                 <CustomTable
@@ -523,56 +464,37 @@ export default function Dashboard({ isUser }) {
               </Box>
             </>
           ) : (
-            
-              page === 'customers' ?
-              <>
-                <Stack direction="row" justifyContent={"center"} mb={11}>
-                  <Typography
-                    sx={{ fontWeight: "bold", color: "black" }}
-                    variant={"h5"}
-                  >
-                    Customer List
-                  </Typography>
-                </Stack>
-                <Box sx={{ my: 2 }}>
-                  <CustomerTable
-                    data={customerData}
-                    handleEditModal={handleEditModal}
-                    handleDeleteModal={handleDeleteModal}
-                  />
-                </Box>
-              </> : 
-              <>
-                <Stack direction="row" justifyContent={"center"} mb={11}>
-                  {
-                    page === 'addCustomer' ? 
-                      <Typography
-                        sx={{ fontWeight: "bold", color: "black" }}
-                        variant={"h5"}
-                      >
-                        Add a Customer
-                      </Typography> : 
-                      <Typography
-                        sx={{ fontWeight: "bold", color: "black" }}
-                        variant={"h5"}
-                      >
-                        {isUser ? "Edit Profile" : "Add a Practitioner"}
-                      </Typography>
-                      
-                  }
-                </Stack>
-                <Box sx={{ my: 2 }}>
-                  {
-                    page === 'addCustomer' ?
-                    <AddCustomer addCustomer={addCustomer}/> : <AddPractitioner
-                        addPractitioner={addPractitioner}
-                        userProfile={userProfile}
-                        isUser={isUser}
-                        handleUpdateProfile={handleSaveUser}
-                      />
-                  }
-                </Box>
-              </>
+            <>
+              <Stack direction="row" justifyContent={"center"} mb={11}>
+                {
+                  page === 'addCustomer' ? 
+                    <Typography
+                      sx={{ fontWeight: "bold", color: "black" }}
+                      variant={"h5"}
+                    >
+                      Add a Customer
+                    </Typography> : 
+                    <Typography
+                      sx={{ fontWeight: "bold", color: "black" }}
+                      variant={"h5"}
+                    >
+                      {isUser ? "Edit Profile" : "Add a Practitioner"}
+                    </Typography>
+                    
+                }
+              </Stack>
+              <Box sx={{ my: 2 }}>
+                {
+                  page === 'addCustomer' ?
+                  <AddCustomer /> : <AddPractitioner
+                      addPractitioner={addPractitioner}
+                      userProfile={userProfile}
+                      isUser={isUser}
+                      handleUpdateProfile={handleSaveUser}
+                    />
+                }
+              </Box>
+            </>
           )}
         </Box>
       </Main>
@@ -587,29 +509,42 @@ const Sidebar = ({
   setPage,
   page,
   userProfile,
-  isUser
+  isUser,
+  isCustomer
 }) => {
-  const buttons = !isUser ?
-    [
+  const buttons = !isUser
+    ? ( isCustomer ? [
       {
-        name: "Home",
+        name: "Dashboard",
         icon: House,
-        onClick: () => setPage("home"),
-        active: page === "home",
       },
       {
-        name: "Add Practitioner",
-        icon: Add,
-        onClick: () => setPage("add"),
-        active: page === "add",
+        name: "Recommendations",
+        icon: House,
       },
       {
-        name: "Sign out",
-        icon: Logout,
-        onClick: () => {
-          Cookies.remove("token");
-          window.location.href = "/login";
-        },
+        name: "Nutrition",
+        icon: House,
+      },
+      {
+        name: "Essential Oils",
+        icon: House,
+      },
+      {
+        name: "Crystals",
+        icon: House,
+      },
+      {
+        name: "LifeStyle",
+        icon: House,
+      },
+      {
+        name: "Psycho Emotional",
+        icon: House,
+      },
+      {
+        name: "Physical",
+        icon: House,
       },
     ] : [
         {
@@ -619,17 +554,33 @@ const Sidebar = ({
           active: page === "home",
         },
         {
-          name: "Add Customer",
+          name: "Add Practitioner",
           icon: Add,
-          onClick: () => setPage("addCustomer"),
-          active: page === "addCustomer",
+          onClick: () => setPage("add"),
+          active: page === "add",
         },
         {
-          name: "Customers",
-          icon: MenuIcon,
-          onClick: () => setPage("customers"),
-          active: page === "customers",
+          name: "Sign out",
+          icon: Logout,
+          onClick: () => {
+            Cookies.remove("token");
+            window.location.href = "/login";
+          },
         },
+      ])
+    : [
+        {
+          name: "Home",
+          icon: House,
+          onClick: () => setPage("home"),
+          active: page === "home",
+        },
+        // {
+        //   name: "Add Customer",
+        //   icon: Add,
+        //   onClick: () => setPage("addCustomer"),
+        //   active: page === "addCustomer",
+        // },
         {
           name: "Sign out",
           icon: Logout,
@@ -716,7 +667,7 @@ const Sidebar = ({
             color: "white",
           }}
         >
-          {isUser ? userProfile.firstname : "Administrator"}
+          {isUser ? `${userProfile.firstname} ${userProfile.lastname}` : "Administrator"}
         </Typography>
       </Box>
       <List

@@ -468,6 +468,7 @@ export default function EditModal({
                 onChange={formik.handleChange}
                 value={formik.values.review}
               >
+                <MenuItem value="0">0</MenuItem>
                 <MenuItem value="1">1</MenuItem>
                 <MenuItem value="2">2</MenuItem>
                 <MenuItem value="3">3</MenuItem>

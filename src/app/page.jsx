@@ -80,7 +80,7 @@ export default function Home() {
   // Value
   const [selectedPractitioner, setSelectedPractitioner] = useState(null);
   const [practitioners, setPractitioners] = useState([]);
-  const [zipcode, setZipcode] = useState(0);
+  const [zipcode, setZipcode] = useState(null);
   const [mile, setMile] = useState(0);
   const [practitionerType, setPractitionerType] = useState("All");
   const [filter, setFilter] = useState([]);
@@ -732,30 +732,70 @@ export default function Home() {
                                     direction={"row"}
                                     boxShadow={"0px 1px 8px #888888"}
                                     co="correctValue"
-                                    borderRadius={".2rem"}
-                                    border={"2px 0 0 2px"}
+                                    borderRadius={".3rem"}
+                                    border={"2px solid #fff"}
+                                    borderColor={'#fff'}
                                     position={"absolute"}
                                     top={-0.7}
-                                    left={0.7}
+                                    left={'-.5rem'}
                                     p={0.4}
-                                    bgcolor={"white"}
+                                    bgcolor={"primary.main"}
                                     alignItems={"center"}
-                                    px={0.5}
+                                    pl={0.5}
+                                    pr={1}
                                   >
                                     <img
                                       src="./img/logo.png"
-                                      width="25"
-                                      height="25"
+                                      width="20"
+                                      height="20"
                                       alt="Uploaded Image"
                                     />
                                     <Typography
                                       co="correctValue"
                                       fontSize={".8rem"}
-                                      color={"#333"}
+                                      color={"#fff"}
                                       ml={0.2}
+                                      textTransform={'uppercase'}
                                       letterSpacing={"-.05em"}
                                     >
                                       Recommended
+                                    </Typography>
+                                  </Stack>
+                                ) : (
+                                  ""
+                                )}
+                                {element.availability == "Remote" ? (
+                                  <Stack
+                                    direction={"row"}
+                                    boxShadow={"0px 1px 8px #888888"}
+                                    co="correctValue"
+                                    borderRadius={".3rem"}
+                                    border={"2px solid #fff"}
+                                    borderColor={'#fff'}
+                                    position={"absolute"}
+                                    top={element.rank === 3 ? '1.5rem' : -0.7}
+                                    left={'-.5rem'}
+                                    p={0.4}
+                                    bgcolor={"primary.main"}
+                                    alignItems={"center"}
+                                    pl={0.5}
+                                    pr={1}
+                                  >
+                                    <img
+                                      src="./img/logo.png"
+                                      width="20"
+                                      height="20"
+                                      alt="Uploaded Image"
+                                    />
+                                    <Typography
+                                      co="correctValue"
+                                      fontSize={".8rem"}
+                                      textTransform={'uppercase'}
+                                      color={"#fff"}
+                                      ml={0.2}
+                                      letterSpacing={"-.05em"}
+                                    >
+                                      Remote
                                     </Typography>
                                   </Stack>
                                 ) : (

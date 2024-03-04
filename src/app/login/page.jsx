@@ -147,7 +147,6 @@ export default function SignIn() {
             sx={{ mt: 1 }}
           >
             <TextField
-              size="small"
               margin="normal"
               required
               fullWidth
@@ -160,7 +159,6 @@ export default function SignIn() {
             />
             {isAdmin == true ? (
               <TextField
-                size="small"
                 margin="normal"
                 required
                 fullWidth

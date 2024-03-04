@@ -1,12 +1,17 @@
 "use client";
-import CustomerDashboard from "@/components/CustomerDashboard";
+import Dashboard from "@/components/Dashboard";
 import React, { Suspense } from "react";
 import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 export function Customer() {
-  const token = Cookies.get("token");
-  
-  return <CustomerDashboard />;
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
+  if (token) {
+    Cookies.set("token", token);
+  }
+  return <Dashboard isCustomer />;
 }
 
 export default function SuspenseUser() {

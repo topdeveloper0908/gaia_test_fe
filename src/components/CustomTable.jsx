@@ -315,10 +315,12 @@ export default function CustomTable({
                           fontSize: "0.8rem",
                           fontWeight: "bold",
                         }}
-                        onClick={() => {
-                          row.meetinglink &&
-                            window.open(row.meetinglink, "_blank");
-                        }}
+                        href={
+                          !row.meetinglink
+                            ? ``
+                            : row.meetinglink
+                        }
+                        target="_blank"
                       >
                         Link to Meeting
                       </Button>

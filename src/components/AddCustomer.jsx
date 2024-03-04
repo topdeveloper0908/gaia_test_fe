@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Select from "@mui/material/Select";
@@ -14,17 +15,20 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Stack from "@mui/material/Stack";
-import Cookies from "js-cookie";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Modal from "@mui/material/Modal";
+import Divider from "@mui/material/Divider";
+import CustomMultiSelect from "@/components/Multiselect";
 import axios from "axios";
 
-export default function AddCustomer({addCustomer}) {
+export default function AddCustomer() {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const token = Cookies.get("token");
 const [countries, setCountries] = useState([]);
-const [isSubmitting, setIsSubmitting] = useState(false);
-
 useEffect(() => {
     axios
       .get("https://trial.mobiscroll.com/content/countries.json")
@@ -34,95 +38,11 @@ useEffect(() => {
         data.sort((a, b) => a.text.localeCompare(b.text));
         setCountries(data);
       });
+    axios.get(`${API_URL}metadata`).then((res) => {
+      setSpecialtyOptions(res.data.specs);
+      setTagsOptions(res.data.tags);
+    });
 }, []);
-
-  // yup
-  const validationSchema = Yup.object().shape({
-    firstname: Yup.string(),
-    lastname: Yup.string(),
-    email: Yup.string(),
-    phone: Yup.string(),
-    sex: Yup.string(),
-    address: Yup.string(),
-    city: Yup.string(),
-    state: Yup.string(),
-    zipcode: Yup.string(),
-    country: Yup.string(),
-    password: Yup.string(),
-    passwordConfirm: Yup.string()
-  });
-
-  // formik
-  const initialValues = {
-    firstname: "",
-    lastname: "",
-    email: "",
-    phone: "",
-    sex: "Male",
-    address: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: "US",
-    password: "",
-    passwordConfirm: ""
-  };
-
-  const handleSubmit = async (values) => {
-    setIsSubmitting(true);
-    console.log(values);
-    if(values.password !== values.passwordConfirm) {
-      toast.error("Password should be matched", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    const response = await axios.post(
-      `${API_URL}customer_new`,
-      JSON.stringify(values),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${token}`
-        },
-      }
-    );
-
-    const result = response.data;
-      if (result == "success") {
-        toast.success("Customer registered successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-        addCustomer(values);
-      } else if (result == "duplicated") {
-        toast.error("Customer already exists!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }
-      setIsSubmitting(false);
-    };
-
-  const formik = useFormik({
-    initialValues: initialValues,
-    validationSchema,
-    onSubmit: handleSubmit,
-  });
 
   return (
     <Grid
@@ -130,7 +50,6 @@ useEffect(() => {
       spacing={4}
       justifyContent={"center"}
       component={"form"}
-      onSubmit={formik.handleSubmit}
     >
       <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
         <Stack direction="row" spacing={2} justifyContent={"center"}>
@@ -144,9 +63,6 @@ useEffect(() => {
             autoComplete="firstname"
             autoFocus
             type="text"
-            onChange={formik.handleChange}
-            value={formik.values.firstname}
-            required
           />
           <TextField
             size="small"
@@ -158,9 +74,6 @@ useEffect(() => {
             autoComplete="lastname"
             autoFocus
             type="text"
-            onChange={formik.handleChange}
-            value={formik.values.lastname}
-            required
           />
         </Stack>
         <Stack direction="row" spacing={2} justifyContent={"center"}>
@@ -174,9 +87,7 @@ useEffect(() => {
             autoComplete="email"
             autoFocus
             type="email"
-            required
-            onChange={formik.handleChange}
-            value={formik.values.email}
+          
           />
           <TextField
             size="small"
@@ -188,39 +99,6 @@ useEffect(() => {
             autoComplete="phone"
             autoFocus
             type="text"
-            required
-            onChange={formik.handleChange}
-            value={formik.values.phone}
-          />
-        </Stack>
-        <Stack direction="row" spacing={2} justifyContent={"center"}>
-          <TextField
-            size="small"
-            margin="normal"
-            fullWidth
-            id="password"
-            label="Password"
-            name="password"
-            autoComplete="password"
-            autoFocus
-            type="password"
-            required
-            onChange={formik.handleChange}
-            value={formik.values.password}
-          />
-          <TextField
-            size="small"
-            margin="normal"
-            fullWidth
-            id="passwordConfirm"
-            label="Confirm Password"
-            name="passwordConfirm"
-            autoComplete="passwordConfirm"
-            autoFocus
-            type="password"
-            required
-            onChange={formik.handleChange}
-            value={formik.values.passwordConfirm}
           />
         </Stack>
         <Stack direction="row" spacing={2} justifyContent={"center"}>
@@ -232,8 +110,7 @@ useEffect(() => {
               id="demo-simple-select"
               label="Sex"
               name="sex"
-              onChange={formik.handleChange}
-              value={formik.values.sex}
+             
             >
               <MenuItem value="Male" selected>
                 Male
@@ -254,8 +131,7 @@ useEffect(() => {
             autoComplete="address"
             autoFocus
             type="text"
-            onChange={formik.handleChange}
-            value={formik.values.address}
+           
           />
         </Stack>
         <Stack direction="row" spacing={2} justifyContent={"center"}>
@@ -268,8 +144,7 @@ useEffect(() => {
             autoComplete="city"
             autoFocus
             type="text"
-            onChange={formik.handleChange}
-            value={formik.values.city}
+       
           />
           <TextField
             size="small"
@@ -280,8 +155,7 @@ useEffect(() => {
             autoComplete="state"
             autoFocus
             type="text"
-            onChange={formik.handleChange}
-            value={formik.values.state}
+          
           />
         </Stack>
         <Stack direction="row" spacing={2}>
@@ -294,8 +168,7 @@ useEffect(() => {
             autoComplete="zipcode"
             autoFocus
             type="text"
-            onChange={formik.handleChange}
-            value={formik.values.zipcode}
+            
           />
           <FormControl fullWidth>
             <InputLabel id="demo-simple-select-label">Country</InputLabel>
@@ -309,8 +182,7 @@ useEffect(() => {
               placeholder="Select Country"
               autoFocus
               type="text"
-              onChange={formik.handleChange}
-              value={formik.values.country}
+              
             >
               {countries.map((country) => (
                 <MenuItem value={country.value} key={country.value}>
@@ -320,18 +192,104 @@ useEffect(() => {
             </Select>
           </FormControl>
         </Stack>
+        <Stack>
+          <TextField
+            size="small"
+            id="description"
+            label="Description"
+            name="description"
+            type="text"
+            sx={{
+              visibility: "hidden",
+            }}
+          />
+        </Stack>
       </Grid>
       <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
         <Button
           type="submit"
           variant="contained"
           sx={{ m: 4, py: 2, px: 4 }}
-          disabled={!formik.isValid || isSubmitting}
           size="large"
         >
-          {isSubmitting ? "Submitting..." : "Add"}
+          Add
         </Button>
       </Box>
     </Grid>
+  );
+}
+
+export function SelectModal({
+  open,
+  handleClose,
+  style,
+  selected,
+  setSelected,
+  type,
+  options,
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      aria-labelledby="parent-modal-title"
+      aria-describedby="parent-modal-description"
+      sx={{
+        color: "black",
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          bgcolor: "white",
+          borderRadius: 1,
+          boxShadow: 24,
+          width: 450,
+        }}
+      >
+        <h3
+          id="parent-modal-title"
+          style={{
+            padding: "20px",
+          }}
+        >
+          Select {type}
+        </h3>
+        <Divider component={"div"} fullWidth />
+
+        <Box
+          style={{
+            padding: "15px",
+          }}
+        >
+          <CustomMultiSelect
+            selected={selected}
+            setSelected={setSelected}
+            type={type}
+            options={options}
+          />
+        </Box>
+
+        <Divider component={"div"} fullWidth />
+        <Stack direction="row" spacing={1} justifyContent={"center"} py={2}>
+          <Button variant="contained" color="primary" onClick={handleClose}>
+            Save
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              setSelected([]);
+              handleClose();
+            }}
+          >
+            Cancel
+          </Button>
+        </Stack>
+      </Box>
+    </Modal>
   );
 }
