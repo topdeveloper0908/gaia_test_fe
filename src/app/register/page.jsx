@@ -95,7 +95,7 @@ export default function SignUp() {
     phone: "",
     sex: "Male",
     availability: "In-person",
-    uploaded: 0,
+    upload: 0,
     address: "",
     city: "",
     state: "",
@@ -105,6 +105,7 @@ export default function SignUp() {
     specialty: "",
     tags: "",
     type: "Practitioner",
+    hide: 0
   };
 
   const handleSubmit = async (values) => {
@@ -125,7 +126,7 @@ export default function SignUp() {
           console.log("Error uploading file: " + err);
         });
       values.imageURL = res.data;
-      values.uploaded = 1;
+      values.upload = 1;
     }
     const response = await axios.post(`${API_URL}new`, JSON.stringify(values), {
       headers: {
@@ -138,7 +139,7 @@ export default function SignUp() {
       setStep(2);
     } else if (result == "duplicated") {
       toast.error("User already exists!", {
-        position: "top-center",
+        position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
         closeOnClick: true,
@@ -519,6 +520,25 @@ export default function SignUp() {
                       >
                         <MenuItem value="Practitioner">Practitioner</MenuItem>
                         <MenuItem value="Business">Business</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Stack>
+                  <Stack my={2}>
+                    <FormControl fullWidth>
+                      <InputLabel id="demo-simple-select-label">
+                        Hide Profile Info
+                      </InputLabel>
+                      <Select
+                        size="small"
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        name="type"
+                        label="Hide Profile Info"
+                        onChange={formik.handleChange}
+                        value={formik.values.hide}
+                      >
+                        <MenuItem value="0">Show</MenuItem>
+                        <MenuItem value="1">Hide</MenuItem>
                       </Select>
                     </FormControl>
                   </Stack>

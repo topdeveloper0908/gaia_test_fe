@@ -19,6 +19,7 @@ export default function SignIn() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
   const [isAdmin, setAdmin] = useState(false);
+  const [step, setStep] = useState(0);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

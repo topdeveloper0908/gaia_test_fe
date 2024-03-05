@@ -54,7 +54,7 @@ export default function ConfirmDeleteModal({
             padding: "20px",
           }}
         >
-          Delete Practitioner
+          Delete {user.credentials ? 'API' : user.practitioner ? 'Customer' : 'Practitioner'}
         </h3>
         <Divider component={"div"} fullWidth />
         <Box
@@ -67,7 +67,7 @@ export default function ConfirmDeleteModal({
           }}
         >
           <Typography component={"p"}>
-            Are you sure you want to delete this practitioner? <br />
+            Are you sure you want to delete this {user.credentials ? 'API' : user.practitioner ? 'customer' : 'practitioner'}? <br />
             <strong>
               {user?.firstname} {user?.lastname}
             </strong>

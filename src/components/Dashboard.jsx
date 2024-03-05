@@ -18,8 +18,12 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import MailIcon from "@mui/icons-material/Mail";
+import MicrowaveIcon from '@mui/icons-material/Microwave';
 import { Avatar, Button, Stack } from "@mui/material";
 import { Add, House, Logout, User } from "@mui/icons-material";
 import CustomTable from "@/components/CustomTable";
@@ -32,10 +36,23 @@ import EditModal from "@/components/EditModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import * as XLSX from "xlsx";
 import AddPractitioner from "@/components/AddPractitioener";
-import AddCustomer from "@/components/AddCustomer";
+import AddCustomer from "@/components/customer/AddCustomer";
+import EditCustomerModal from "@/components/customer/EditCustomerModal";
+import CustomerTable from "@/components/customer/CustomerTable";
 import UploadModal from "./UploadModal";
 
 const drawerWidth = 300;
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
 
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({
@@ -61,6 +78,7 @@ export default function Dashboard({ isUser, isCustomer }) {
   const [loading, setLoading] = React.useState(true);
   const [open, setOpen] = React.useState(true);
   const [data, setData] = React.useState([]);
+  const [customerData, setCustomerData] = React.useState([]);
   const [dataTmp, setDataTmp] = React.useState([]);
   const [search, setSearch] = React.useState('');
   const [userProfile, setuserProfile] = React.useState({});
@@ -69,6 +87,7 @@ export default function Dashboard({ isUser, isCustomer }) {
   const [editUser, setEditUser] = React.useState({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [deleteUser, setDeleteUser] = React.useState({});
+  const [deleteCustomer, setDeleteCustomer] = React.useState({});
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [openDeleteModal, setOpenDeleteModal] = React.useState(false);
   const [page, setPage] = React.useState("home");
@@ -84,7 +103,11 @@ export default function Dashboard({ isUser, isCustomer }) {
   };
 
   const handleDeleteModal = (user) => {
-    setDeleteUser(user);
+    if(!isUser) {
+      setDeleteUser(user);
+    } else {
+      setDeleteCustomer(user);
+    }
     setOpenDeleteModal(true);
   };
 
@@ -323,7 +346,12 @@ export default function Dashboard({ isUser, isCustomer }) {
   };
 
   React.useEffect(() => {
-    !isUser ? getData() : getUser();
+    if(!isUser) {
+      getData();
+    } else {
+      getUser();
+      getCustomers();
+    }
   }, []);
 
   const handleDrawerOpen = () => {
@@ -359,6 +387,96 @@ export default function Dashboard({ isUser, isCustomer }) {
     }
   }, [search]);
 
+  // Customer
+
+  const getCustomers = async () => {
+    await axios
+      .get(`${API_URL}user/customers`, {
+        headers: {
+          Authorization: `${token}`,
+        },
+      })
+      .then((res) => {
+        console.log('customers', res.data);
+        setCustomerData(res.data);
+      })
+      .catch((err) => {
+        if (err?.response?.status === 403) {
+          window.location.href = "/login";
+        }
+        console.log(err);
+      });
+    setLoading(false);
+  };
+
+  function addCustomer(customer) {
+    setCustomerData([...customerData, customer]);
+  }
+
+  const handleSaveCustomer = async (newCustomer) => {
+    setIsSubmitting(true);
+    await axios
+      .post(`${API_URL}customer/update`, newCustomer)
+      .then((res) => {
+        toast.success(
+          `Customer updated successfully`
+        );
+        if (isUser) {
+          setOpenEditModal(false);
+          // set new data
+          let newData = customerData.map((user) => {
+            if (user.id == newCustomer.id) {
+              return newCustomer;
+            }
+          });
+          setCustomerData(newData);
+        } else {
+          setuserProfile(newCustomer);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Failed to update user");
+      });
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteCustomer = async (customerId) => {
+    setIsDeleting(true);
+    console.log('selected', customerId);
+    await axios
+      .post(
+        `${API_URL}customer/remove`,
+        {
+          id: customerId,
+        },
+        {
+          headers: {
+            Authorization: `${token}`,
+          },
+        }
+      )
+      .then((res) => {
+        toast.success("Customer deleted successfully");
+        setOpenDeleteModal(false);
+        // set new data
+        let newData = customerData.filter((user) => user.id != customerId);
+        setCustomerData(newData);
+        setOpenDeleteModal(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Failed to delete customer");
+      });
+    setIsDeleting(false);
+  };
+
+  React.useEffect(() => {
+    if(page=='home') {
+      setData(dataTmp);
+    }
+  }, [page]);
+
   return loading ? (
     <Loading />
   ) : (
@@ -387,6 +505,25 @@ export default function Dashboard({ isUser, isCustomer }) {
             handleClose={() => setOpenDeleteModal(false)}
             isDeleting={isDeleting}
             user={deleteUser}
+          />
+        </>
+      )}
+      {isUser && (
+        <>
+          <EditCustomerModal
+            open={openEditModal}
+            handleConfirm={handleSaveCustomer}
+            handleClose={() => setOpenEditModal(false)}
+            user={editUser}
+            setUser={setEditUser}
+            isSubmitting={isSubmitting}
+          />
+          <ConfirmDeleteModal
+            open={openDeleteModal}
+            handleConfirm={handleDeleteCustomer}
+            handleClose={() => setOpenDeleteModal(false)}
+            isDeleting={isDeleting}
+            user={deleteCustomer}
           />
         </>
       )}
@@ -464,6 +601,156 @@ export default function Dashboard({ isUser, isCustomer }) {
               </Box>
             </>
           ) : (
+            page === 'customers' || page === 'lifewave' ?
+              <>
+                {
+                  page === 'customers' && 
+                (<>
+                  <Stack direction="row" justifyContent={"center"} mb={11}>
+                    <Typography
+                      sx={{ fontWeight: "bold", color: "black" }}
+                      variant={"h5"}
+                    >
+                      Customer List
+                    </Typography>
+                  </Stack>
+                  <Box sx={{ my: 2 }}>
+                    <CustomerTable
+                      data={customerData}
+                      handleEditModal={handleEditModal}
+                      handleDeleteModal={handleDeleteModal}
+                    />
+                  </Box>
+                </>)
+                }
+                {
+                  page === 'lifewave' && 
+                    (<>
+                      <Stack direction="row" justifyContent={"center"} mb={11}>
+                        <Typography
+                          sx={{ fontWeight: "bold", color: "black" }}
+                          variant={"h5"}
+                        >
+                          Bio-Well Recommendations for 
+                        </Typography>
+                        <Typography 
+                          ml={1}
+                          color='primary'
+                          sx={{ fontWeight: "bold" }}
+                          variant={"h5"}
+                        > Lifewave Patches</Typography>
+                      </Stack>
+                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto'>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          id="searchWord"
+                          label="Lifewave Account Username"
+                          name="searchWord"
+                          autoComplete="searchWord"
+                          autoFocus
+                          type="text"
+                          onChange={searchPractitioner}
+                          value={search}
+                        />
+                        <Box mr={1}></Box>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          id="searchWord"
+                          label="Email"
+                          name="searchWord"
+                          autoComplete="searchWord"
+                          autoFocus
+                          type="text"
+                          disabled
+                          value={userProfile.email}
+                        />
+                      </Stack>
+                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          id="searchWord"
+                          label="First Name"
+                          name="searchWord"
+                          autoComplete="searchWord"
+                          autoFocus
+                          type="text"
+                          disabled
+                          value={userProfile.firstname}
+                        />
+                        <Box mr={1}></Box>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          id="searchWord"
+                          label="Last Name"
+                          name="searchWord"
+                          autoComplete="searchWord"
+                          autoFocus
+                          type="text"
+                          disabled
+                          value={userProfile.lastname}
+                        />
+                      </Stack>
+                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
+                        <Button
+                          component="label"
+                          role={undefined}
+                          variant="outlined"
+                          tabIndex={-1}
+                          sx={{py:10}}
+                          fullWidth
+                        >
+                          <CloudUploadIcon sx={{ fontSize: 100 }} />
+                          <VisuallyHiddenInput type="file" />
+                        </Button>
+                      </Stack>
+                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              value="remember"
+                              onChange={() => {
+                                setAdmin(!isAdmin);
+                              }}
+                              color="primary"
+                            />
+                          }
+                          label="I understand that the information being shared and patch recommendations are not medical advice and are not there to cure or heal any diseases"
+                        />
+                      </Stack>
+                      <Stack alignItems={'center'} justifyContent='center' direction="row" maxWidth={'30rem'} mx='auto' mt={4}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => {
+                            setOpenUploadModal(true);
+                          }}
+                          style={{whiteSpace: 'nowrap', width: '10rem'}}
+                        >
+                          Generate CSV
+                        </Button>
+                        <IconButton sx={{mx: 1}} color="primary" aria-label="Reload">
+                          <RefreshIcon />
+                        </IconButton>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => {
+                            setOpenUploadModal(true);
+                          }}
+                          style={{whiteSpace: 'nowrap', width: '10rem'}}
+                        >
+                          Generate PDF
+                        </Button>
+                      </Stack>
+                      
+                    </>)
+                }
+              </>
+              : 
             <>
               <Stack direction="row" justifyContent={"center"} mb={11}>
                 {
@@ -486,7 +773,7 @@ export default function Dashboard({ isUser, isCustomer }) {
               <Box sx={{ my: 2 }}>
                 {
                   page === 'addCustomer' ?
-                  <AddCustomer /> : <AddPractitioner
+                  <AddCustomer  addCustomer={addCustomer}/> : <AddPractitioner
                       addPractitioner={addPractitioner}
                       userProfile={userProfile}
                       isUser={isUser}
@@ -575,12 +862,24 @@ const Sidebar = ({
           onClick: () => setPage("home"),
           active: page === "home",
         },
-        // {
-        //   name: "Add Customer",
-        //   icon: Add,
-        //   onClick: () => setPage("addCustomer"),
-        //   active: page === "addCustomer",
-        // },
+        {
+          name: "Add Customer",
+          icon: Add,
+          onClick: () => setPage("addCustomer"),
+          active: page === "addCustomer",
+        },
+        {
+          name: "Customers",
+          icon: MenuIcon,
+          onClick: () => setPage("customers"),
+          active: page === "customers",
+        },
+        {
+          name: "Lifewave Patches",
+          icon: MicrowaveIcon,
+          onClick: () => setPage("lifewave"),
+          active: page === "lifewave",
+        },
         {
           name: "Sign out",
           icon: Logout,
@@ -639,14 +938,14 @@ const Sidebar = ({
             ) : (
               <Avatar
                 src={userProfile.imageURL}
-                alt={userProfile.firstname[0]}
+                alt={userProfile.firstname}
                 sx={{ width: 100, height: 100 }}
               />
             )
           ) : (
             <Avatar
               src={API_URL + "src/" + userProfile.imageURL}
-              alt={userProfile.firstname[0]}
+              alt={userProfile.firstname}
               sx={{ width: 100, height: 100 }}
             />
           ))}

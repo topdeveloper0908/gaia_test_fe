@@ -299,7 +299,7 @@ export default function CustomTable({
                           fontWeight: "bold",
                         }}
                         href={
-                          !row.profileLink
+                          !row.profileLink || row.profileLink == ''
                             ? `/profile/${row.id}`
                             : row.profileLink
                         }
@@ -316,7 +316,7 @@ export default function CustomTable({
                           fontWeight: "bold",
                         }}
                         href={
-                          !row.meetinglink
+                          !row.meetinglink || row.meetinglink == ''
                             ? ``
                             : row.meetinglink
                         }

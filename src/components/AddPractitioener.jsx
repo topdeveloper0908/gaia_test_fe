@@ -94,7 +94,7 @@ export default function AddPractitioner({
     phone: "",
     sex: "Male",
     availability: "In-person",
-    uploaded: 0,
+    upload: 0,
     address: "",
     city: "",
     state: "",
@@ -109,6 +109,7 @@ export default function AddPractitioner({
     profileLink: "",
     status: "pending",
     type: "Practitioner",
+    hide: 0
   };
 
   const handleSubmit = async (values) => {
@@ -125,13 +126,23 @@ export default function AddPractitioner({
         .then((res) => {
           return res;
         })
-        .catch((err) => {
+        .catch((err, status) => {
+          toast.error("File Upload Failed!", {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+          setIsSubmitting(false);
           console.log("Error uploading file: " + err);
         });
       values.imageURL = res.data;
-      values.uploaded = 1;
+      values.upload = 1;
     }
     if (isUser) {
+      values.upload = 0 ;
       await handleUpdateProfile(values);
       setIsSubmitting(false);
       return;
@@ -147,7 +158,7 @@ export default function AddPractitioner({
     const result = response.data;
     if (result == "duplicated") {
       toast.error("Practitioner already exists!", {
-        position: "top-center",
+        position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
         closeOnClick: true,
@@ -156,7 +167,7 @@ export default function AddPractitioner({
       });
     } else {
       toast.success("Practitioner registered successfully!", {
-        position: "top-center",
+        position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
         closeOnClick: true,
@@ -570,6 +581,23 @@ export default function AddPractitioner({
             value={formik.values.profileLink}
           />
         </Stack>
+        <FormControl fullWidth>
+          <InputLabel id="demo-simple-select-label" size="small">
+            Hide Profile Info
+          </InputLabel>
+          <Select
+            size="small"
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            name="hide"
+            label="Hide Profile Info"
+            onChange={formik.handleChange}
+            value={formik.values.hide}
+          >
+            <MenuItem value="0">Show</MenuItem>
+            <MenuItem value="1">Hide</MenuItem>
+          </Select>
+        </FormControl>
       </Grid>
       <SelectModal
         open={selectModalOpen}
