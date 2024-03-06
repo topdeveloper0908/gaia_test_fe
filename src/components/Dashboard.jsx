@@ -1,40 +1,38 @@
 "use client";
 import * as React from "react";
+import axios from "axios";
+import Cookies from "js-cookie";
+import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
+
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-import CssBaseline from "@mui/material/CssBaseline";
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
 import TextField from "@mui/material/TextField";
 import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import MailIcon from "@mui/icons-material/Mail";
-import MicrowaveIcon from '@mui/icons-material/Microwave';
+import MenuIcon from "@mui/icons-material/Menu";
 import { Avatar, Button, Stack } from "@mui/material";
-import { Add, House, Logout, User } from "@mui/icons-material";
+
+import RefreshIcon from '@mui/icons-material/Refresh';
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import MicrowaveIcon from '@mui/icons-material/Microwave';
+import { Add, House, Logout } from "@mui/icons-material";
+
 import CustomTable from "@/components/CustomTable";
-import axios from "axios";
-import Cookies from "js-cookie";
 import Loading from "@/components/Loading";
 import { API_URL } from "@/constants/constants";
-import { toast } from "react-toastify";
 import EditModal from "@/components/EditModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
-import * as XLSX from "xlsx";
 import AddPractitioner from "@/components/AddPractitioener";
 import AddCustomer from "@/components/customer/AddCustomer";
 import EditCustomerModal from "@/components/customer/EditCustomerModal";
@@ -477,6 +475,109 @@ export default function Dashboard({ isUser, isCustomer }) {
     }
   }, [page]);
 
+
+  // Practitioner
+
+  // File Input
+  const handleFileChange = (event) => {
+    const uploadedFiles = event.target.files;
+
+    let fileIndex = 0;
+    let averageKeyData = [];
+    let averageData = [];
+
+    const processFile = (file) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const fileContent = e.target.result;
+        const rows = fileContent.split('\n');
+        rows.forEach((row, rowIndex) => {
+          const data = row.split(',');
+
+          if (fileIndex === 0) {
+            averageKeyData.push(getKey(data));
+            averageData.push(getValue(data));
+          } else {
+            averageData[rowIndex] += getValue(data);
+          }
+        });
+
+        fileIndex++;
+        console.log(averageData, averageKeyData);
+      };
+
+      reader.readAsText(file);
+    };
+
+    // Process each uploaded file
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      processFile(uploadedFiles[i]);
+    }
+  };
+  
+  function getValue(rowData) {
+    function isFloat(value) {
+        return !isNaN(parseFloat(value)) && isFinite(value);
+    }
+
+    if (rowData.length === 1) {
+        const arr = rowData[0].split(';');
+        if (arr[2] === '') {
+            return -100;
+        } else if (isFloat(arr[2])) {
+            return Math.round(parseFloat(arr[2]) * 100) / 100;
+        } else {
+            return -100;
+        }
+    } else if (rowData.length > 1) {
+        let tmpIndex = 0;
+        for (const tmp of rowData) {
+            const arr = tmp.split(';');
+            for (const subTmp of arr) {
+                if (isFloat(subTmp) && tmpIndex > 0) {
+                    return Math.round(parseFloat(subTmp) * 100) / 100;
+                }
+            }
+            tmpIndex++;
+        }
+        return -100;
+    }
+  }
+  function getKey(rowData) {
+    function isFloat(value) {
+        return !isNaN(parseFloat(value)) && isFinite(value);
+    }
+
+    if (rowData.length === 1) {
+        const arr = rowData[0].split(';');
+        let str = '';
+        for (const tmp of arr) {
+            if (isFloat(tmp)) {
+                return str.trim();
+            } else {
+                str += tmp + ' ';
+            }
+        }
+        return str.trim();
+    } else if (rowData.length > 1) {
+        let str = '';
+        for (const tmp of rowData) {
+            const arr = tmp.split(';');
+            for (const subTmp of arr) {
+                if (isFloat(subTmp)) {
+                    return str.trim();
+                } else {
+                    str += subTmp + ' ';
+                }
+            }
+        }
+        return str.trim();
+    }
+  }
+
+
+
   return loading ? (
     <Loading />
   ) : (
@@ -704,7 +805,7 @@ export default function Dashboard({ isUser, isCustomer }) {
                           fullWidth
                         >
                           <CloudUploadIcon sx={{ fontSize: 100 }} />
-                          <VisuallyHiddenInput type="file" />
+                          <VisuallyHiddenInput type="file" onChange={handleFileChange} multiple accept=".csv, .xlsx" />
                         </Button>
                       </Stack>
                       <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
@@ -712,9 +813,6 @@ export default function Dashboard({ isUser, isCustomer }) {
                           control={
                             <Checkbox
                               value="remember"
-                              onChange={() => {
-                                setAdmin(!isAdmin);
-                              }}
                               color="primary"
                             />
                           }
@@ -728,9 +826,9 @@ export default function Dashboard({ isUser, isCustomer }) {
                           onClick={() => {
                             setOpenUploadModal(true);
                           }}
-                          style={{whiteSpace: 'nowrap', width: '10rem'}}
+                          style={{whiteSpace: 'nowrap', width: '20rem'}}
                         >
-                          Generate CSV
+                          Average File Generate
                         </Button>
                         <IconButton sx={{mx: 1}} color="primary" aria-label="Reload">
                           <RefreshIcon />
@@ -741,9 +839,9 @@ export default function Dashboard({ isUser, isCustomer }) {
                           onClick={() => {
                             setOpenUploadModal(true);
                           }}
-                          style={{whiteSpace: 'nowrap', width: '10rem'}}
+                          style={{whiteSpace: 'nowrap', width: '25rem'}}
                         >
-                          Generate PDF
+                          Generate Recommendation PDF
                         </Button>
                       </Stack>
                       
