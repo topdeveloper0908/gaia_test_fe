@@ -20,13 +20,13 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import RefreshIcon from "@mui/icons-material/Refresh";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import MailIcon from "@mui/icons-material/Mail";
-import MicrowaveIcon from '@mui/icons-material/Microwave';
+import MicrowaveIcon from "@mui/icons-material/Microwave";
 import { Avatar, Button, Stack } from "@mui/material";
 import { Add, House, Logout, User } from "@mui/icons-material";
-import CustomTable from "@/components/CustomTable";
+import CustomTable from "@/app/user/CustomTable";
 import axios from "axios";
 import Cookies from "js-cookie";
 import Loading from "@/components/Loading";
@@ -42,15 +42,15 @@ import CustomerTable from "@/components/customer/CustomerTable";
 import UploadModal from "./UploadModal";
 
 const drawerWidth = 300;
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
   height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
+  overflow: "hidden",
+  position: "absolute",
   bottom: 0,
   left: 0,
-  whiteSpace: 'nowrap',
+  whiteSpace: "nowrap",
   width: 1,
 });
 
@@ -80,7 +80,7 @@ export default function Dashboard({ isUser, isCustomer }) {
   const [data, setData] = React.useState([]);
   const [customerData, setCustomerData] = React.useState([]);
   const [dataTmp, setDataTmp] = React.useState([]);
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = React.useState("");
   const [userProfile, setuserProfile] = React.useState({});
   const token = Cookies.get("token");
   const [openEditModal, setOpenEditModal] = React.useState(false);
@@ -103,7 +103,7 @@ export default function Dashboard({ isUser, isCustomer }) {
   };
 
   const handleDeleteModal = (user) => {
-    if(!isUser) {
+    if (!isUser) {
       setDeleteUser(user);
     } else {
       setDeleteCustomer(user);
@@ -313,7 +313,7 @@ export default function Dashboard({ isUser, isCustomer }) {
         },
       })
       .then((res) => {
-        console.log('res', res.data);
+        console.log("res", res.data);
         setData(res.data);
         setDataTmp(res.data);
       })
@@ -346,7 +346,7 @@ export default function Dashboard({ isUser, isCustomer }) {
   };
 
   React.useEffect(() => {
-    if(!isUser) {
+    if (!isUser) {
       getData();
     } else {
       getUser();
@@ -365,21 +365,23 @@ export default function Dashboard({ isUser, isCustomer }) {
 
   const searchPractitioner = (event) => {
     setData(dataTmp);
-    setSearch(event.target.value)
-  }
+    setSearch(event.target.value);
+  };
 
   React.useEffect(() => {
-    if(search === '') {
+    if (search === "") {
       return;
     } else {
       var tmp = [];
-      data.forEach(element => {
-        if( element.firstname.toLowerCase().indexOf(search) > -1 || 
-            element.lastname.toLowerCase().indexOf(search) > -1 ||
-            element.specialty.toLowerCase().indexOf(search) > -1 || 
-            element.tags.toLowerCase().indexOf(search) > -1 ||
-            element.city.toLowerCase().indexOf(search) > -1 || 
-            element.address.toLowerCase().indexOf(search) > -1) {
+      data.forEach((element) => {
+        if (
+          element.firstname.toLowerCase().indexOf(search) > -1 ||
+          element.lastname.toLowerCase().indexOf(search) > -1 ||
+          element.specialty.toLowerCase().indexOf(search) > -1 ||
+          element.tags.toLowerCase().indexOf(search) > -1 ||
+          element.city.toLowerCase().indexOf(search) > -1 ||
+          element.address.toLowerCase().indexOf(search) > -1
+        ) {
           tmp.push(element);
         }
       });
@@ -397,7 +399,7 @@ export default function Dashboard({ isUser, isCustomer }) {
         },
       })
       .then((res) => {
-        console.log('customers', res.data);
+        console.log("customers", res.data);
         setCustomerData(res.data);
       })
       .catch((err) => {
@@ -418,9 +420,7 @@ export default function Dashboard({ isUser, isCustomer }) {
     await axios
       .post(`${API_URL}customer/update`, newCustomer)
       .then((res) => {
-        toast.success(
-          `Customer updated successfully`
-        );
+        toast.success(`Customer updated successfully`);
         if (isUser) {
           setOpenEditModal(false);
           // set new data
@@ -443,7 +443,7 @@ export default function Dashboard({ isUser, isCustomer }) {
 
   const handleDeleteCustomer = async (customerId) => {
     setIsDeleting(true);
-    console.log('selected', customerId);
+    console.log("selected", customerId);
     await axios
       .post(
         `${API_URL}customer/remove`,
@@ -472,7 +472,7 @@ export default function Dashboard({ isUser, isCustomer }) {
   };
 
   React.useEffect(() => {
-    if(page=='home') {
+    if (page == "home") {
       setData(dataTmp);
     }
   }, [page]);
@@ -566,7 +566,7 @@ export default function Dashboard({ isUser, isCustomer }) {
               <Stack direction="row" justifyContent={"space-between"}>
                 <h3>Practitioner List</h3>
 
-                <Stack alignItems={'center'} direction="row">
+                <Stack alignItems={"center"} direction="row">
                   <TextField
                     size="small"
                     fullWidth
@@ -586,7 +586,7 @@ export default function Dashboard({ isUser, isCustomer }) {
                     onClick={() => {
                       setOpenUploadModal(true);
                     }}
-                    style={{whiteSpace: 'nowrap', width: '10rem'}}
+                    style={{ whiteSpace: "nowrap", width: "10rem" }}
                   >
                     Upload Excel
                   </Button>
@@ -600,12 +600,10 @@ export default function Dashboard({ isUser, isCustomer }) {
                 />
               </Box>
             </>
-          ) : (
-            page === 'customers' || page === 'lifewave' ?
-              <>
-                {
-                  page === 'customers' && 
-                (<>
+          ) : page === "customers" || page === "lifewave" ? (
+            <>
+              {page === "customers" && (
+                <>
                   <Stack direction="row" justifyContent={"center"} mb={11}>
                     <Typography
                       sx={{ fontWeight: "bold", color: "black" }}
@@ -621,165 +619,200 @@ export default function Dashboard({ isUser, isCustomer }) {
                       handleDeleteModal={handleDeleteModal}
                     />
                   </Box>
-                </>)
-                }
-                {
-                  page === 'lifewave' && 
-                    (<>
-                      <Stack direction="row" justifyContent={"center"} mb={11}>
-                        <Typography
-                          sx={{ fontWeight: "bold", color: "black" }}
-                          variant={"h5"}
-                        >
-                          Bio-Well Recommendations for 
-                        </Typography>
-                        <Typography 
-                          ml={1}
-                          color='primary'
-                          sx={{ fontWeight: "bold" }}
-                          variant={"h5"}
-                        > Lifewave Patches</Typography>
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto'>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="Lifewave Account Username"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          onChange={searchPractitioner}
-                          value={search}
-                        />
-                        <Box mr={1}></Box>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="Email"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          disabled
-                          value={userProfile.email}
-                        />
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="First Name"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          disabled
-                          value={userProfile.firstname}
-                        />
-                        <Box mr={1}></Box>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="Last Name"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          disabled
-                          value={userProfile.lastname}
-                        />
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
-                        <Button
-                          component="label"
-                          role={undefined}
-                          variant="outlined"
-                          tabIndex={-1}
-                          sx={{py:10}}
-                          fullWidth
-                        >
-                          <CloudUploadIcon sx={{ fontSize: 100 }} />
-                          <VisuallyHiddenInput type="file" />
-                        </Button>
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              value="remember"
-                              onChange={() => {
-                                setAdmin(!isAdmin);
-                              }}
-                              color="primary"
-                            />
-                          }
-                          label="I understand that the information being shared and patch recommendations are not medical advice and are not there to cure or heal any diseases"
-                        />
-                      </Stack>
-                      <Stack alignItems={'center'} justifyContent='center' direction="row" maxWidth={'30rem'} mx='auto' mt={4}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => {
-                            setOpenUploadModal(true);
+                </>
+              )}
+              {page === "lifewave" && (
+                <>
+                  <Stack direction="row" justifyContent={"center"} mb={11}>
+                    <Typography
+                      sx={{ fontWeight: "bold", color: "black" }}
+                      variant={"h5"}
+                    >
+                      Bio-Well Recommendations for
+                    </Typography>
+                    <Typography
+                      ml={1}
+                      color="primary"
+                      sx={{ fontWeight: "bold" }}
+                      variant={"h5"}
+                    >
+                      {" "}
+                      Lifewave Patches
+                    </Typography>
+                  </Stack>
+                  <Stack
+                    alignItems={"center"}
+                    direction="row"
+                    maxWidth={"40rem"}
+                    mx="auto"
+                  >
+                    <TextField
+                      size="small"
+                      fullWidth
+                      id="searchWord"
+                      label="Lifewave Account Username"
+                      name="searchWord"
+                      autoComplete="searchWord"
+                      autoFocus
+                      type="text"
+                      onChange={searchPractitioner}
+                      value={search}
+                    />
+                    <Box mr={1}></Box>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      id="searchWord"
+                      label="Email"
+                      name="searchWord"
+                      autoComplete="searchWord"
+                      autoFocus
+                      type="text"
+                      disabled
+                      value={userProfile.email}
+                    />
+                  </Stack>
+                  <Stack
+                    alignItems={"center"}
+                    direction="row"
+                    maxWidth={"40rem"}
+                    mx="auto"
+                    mt={4}
+                  >
+                    <TextField
+                      size="small"
+                      fullWidth
+                      id="searchWord"
+                      label="First Name"
+                      name="searchWord"
+                      autoComplete="searchWord"
+                      autoFocus
+                      type="text"
+                      disabled
+                      value={userProfile.firstname}
+                    />
+                    <Box mr={1}></Box>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      id="searchWord"
+                      label="Last Name"
+                      name="searchWord"
+                      autoComplete="searchWord"
+                      autoFocus
+                      type="text"
+                      disabled
+                      value={userProfile.lastname}
+                    />
+                  </Stack>
+                  <Stack
+                    alignItems={"center"}
+                    direction="row"
+                    maxWidth={"40rem"}
+                    mx="auto"
+                    mt={4}
+                  >
+                    <Button
+                      component="label"
+                      role={undefined}
+                      variant="outlined"
+                      tabIndex={-1}
+                      sx={{ py: 10 }}
+                      fullWidth
+                    >
+                      <CloudUploadIcon sx={{ fontSize: 100 }} />
+                      <VisuallyHiddenInput type="file" />
+                    </Button>
+                  </Stack>
+                  <Stack
+                    alignItems={"center"}
+                    direction="row"
+                    maxWidth={"40rem"}
+                    mx="auto"
+                    mt={4}
+                  >
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          value="remember"
+                          onChange={() => {
+                            setAdmin(!isAdmin);
                           }}
-                          style={{whiteSpace: 'nowrap', width: '10rem'}}
-                        >
-                          Generate CSV
-                        </Button>
-                        <IconButton sx={{mx: 1}} color="primary" aria-label="Reload">
-                          <RefreshIcon />
-                        </IconButton>
-                        <Button
-                          variant="contained"
                           color="primary"
-                          onClick={() => {
-                            setOpenUploadModal(true);
-                          }}
-                          style={{whiteSpace: 'nowrap', width: '10rem'}}
-                        >
-                          Generate PDF
-                        </Button>
-                      </Stack>
-                      
-                    </>)
-                }
-              </>
-              : 
+                        />
+                      }
+                      label="I understand that the information being shared and patch recommendations are not medical advice and are not there to cure or heal any diseases"
+                    />
+                  </Stack>
+                  <Stack
+                    alignItems={"center"}
+                    justifyContent="center"
+                    direction="row"
+                    maxWidth={"30rem"}
+                    mx="auto"
+                    mt={4}
+                  >
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => {
+                        setOpenUploadModal(true);
+                      }}
+                      style={{ whiteSpace: "nowrap", width: "10rem" }}
+                    >
+                      Generate CSV
+                    </Button>
+                    <IconButton
+                      sx={{ mx: 1 }}
+                      color="primary"
+                      aria-label="Reload"
+                    >
+                      <RefreshIcon />
+                    </IconButton>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => {
+                        setOpenUploadModal(true);
+                      }}
+                      style={{ whiteSpace: "nowrap", width: "10rem" }}
+                    >
+                      Generate PDF
+                    </Button>
+                  </Stack>
+                </>
+              )}
+            </>
+          ) : (
             <>
               <Stack direction="row" justifyContent={"center"} mb={11}>
-                {
-                  page === 'addCustomer' ? 
-                    <Typography
-                      sx={{ fontWeight: "bold", color: "black" }}
-                      variant={"h5"}
-                    >
-                      Add a Customer
-                    </Typography> : 
-                    <Typography
-                      sx={{ fontWeight: "bold", color: "black" }}
-                      variant={"h5"}
-                    >
-                      {isUser ? "Edit Profile" : "Add a Practitioner"}
-                    </Typography>
-                    
-                }
+                {page === "addCustomer" ? (
+                  <Typography
+                    sx={{ fontWeight: "bold", color: "black" }}
+                    variant={"h5"}
+                  >
+                    Add a Customer
+                  </Typography>
+                ) : (
+                  <Typography
+                    sx={{ fontWeight: "bold", color: "black" }}
+                    variant={"h5"}
+                  >
+                    {isUser ? "Edit Profile" : "Add a Practitioner"}
+                  </Typography>
+                )}
               </Stack>
               <Box sx={{ my: 2 }}>
-                {
-                  page === 'addCustomer' ?
-                  <AddCustomer  addCustomer={addCustomer}/> : <AddPractitioner
-                      addPractitioner={addPractitioner}
-                      userProfile={userProfile}
-                      isUser={isUser}
-                      handleUpdateProfile={handleSaveUser}
-                    />
-                }
+                {page === "addCustomer" ? (
+                  <AddCustomer addCustomer={addCustomer} />
+                ) : (
+                  <AddPractitioner
+                    addPractitioner={addPractitioner}
+                    userProfile={userProfile}
+                    isUser={isUser}
+                    handleUpdateProfile={handleSaveUser}
+                  />
+                )}
               </Box>
             </>
           )}
@@ -797,64 +830,66 @@ const Sidebar = ({
   page,
   userProfile,
   isUser,
-  isCustomer
+  isCustomer,
 }) => {
   const buttons = !isUser
-    ? ( isCustomer ? [
-      {
-        name: "Dashboard",
-        icon: House,
-      },
-      {
-        name: "Recommendations",
-        icon: House,
-      },
-      {
-        name: "Nutrition",
-        icon: House,
-      },
-      {
-        name: "Essential Oils",
-        icon: House,
-      },
-      {
-        name: "Crystals",
-        icon: House,
-      },
-      {
-        name: "LifeStyle",
-        icon: House,
-      },
-      {
-        name: "Psycho Emotional",
-        icon: House,
-      },
-      {
-        name: "Physical",
-        icon: House,
-      },
-    ] : [
-        {
-          name: "Home",
-          icon: House,
-          onClick: () => setPage("home"),
-          active: page === "home",
-        },
-        {
-          name: "Add Practitioner",
-          icon: Add,
-          onClick: () => setPage("add"),
-          active: page === "add",
-        },
-        {
-          name: "Sign out",
-          icon: Logout,
-          onClick: () => {
-            Cookies.remove("token");
-            window.location.href = "/login";
+    ? isCustomer
+      ? [
+          {
+            name: "Dashboard",
+            icon: House,
           },
-        },
-      ])
+          {
+            name: "Recommendations",
+            icon: House,
+          },
+          {
+            name: "Nutrition",
+            icon: House,
+          },
+          {
+            name: "Essential Oils",
+            icon: House,
+          },
+          {
+            name: "Crystals",
+            icon: House,
+          },
+          {
+            name: "LifeStyle",
+            icon: House,
+          },
+          {
+            name: "Psycho Emotional",
+            icon: House,
+          },
+          {
+            name: "Physical",
+            icon: House,
+          },
+        ]
+      : [
+          {
+            name: "Home",
+            icon: House,
+            onClick: () => setPage("home"),
+            active: page === "home",
+          },
+          {
+            name: "Add Practitioner",
+            icon: Add,
+            onClick: () => setPage("add"),
+            active: page === "add",
+          },
+          {
+            name: "Sign out",
+            icon: Logout,
+            onClick: () => {
+              Cookies.remove("token");
+              window.location.href = "/login";
+            },
+          },
+        ]
     : [
         {
           name: "Home",
@@ -887,7 +922,7 @@ const Sidebar = ({
             Cookies.remove("token");
             window.location.href = "/login";
           },
-        }
+        },
       ];
   return (
     <Drawer
@@ -966,7 +1001,9 @@ const Sidebar = ({
             color: "white",
           }}
         >
-          {isUser ? `${userProfile.firstname} ${userProfile.lastname}` : "Administrator"}
+          {isUser
+            ? `${userProfile.firstname} ${userProfile.lastname}`
+            : "Administrator"}
         </Typography>
       </Box>
       <List
