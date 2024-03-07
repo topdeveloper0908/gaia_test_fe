@@ -3,6 +3,7 @@ import * as React from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import * as XLSX from "xlsx";
+import FileSaver from 'file-saver';
 import { toast } from "react-toastify";
 
 import { styled, useTheme } from "@mui/material/styles";
@@ -38,6 +39,11 @@ import AddCustomer from "@/components/customer/AddCustomer";
 import EditCustomerModal from "@/components/customer/EditCustomerModal";
 import CustomerTable from "@/components/customer/CustomerTable";
 import UploadModal from "./UploadModal";
+
+import sampleData from '@/Json/data.json';
+import products from '@/Json/products.json';
+import meridianData from '@/Json/meridian.json';
+
 
 const drawerWidth = 300;
 const VisuallyHiddenInput = styled('input')({
@@ -88,7 +94,12 @@ export default function Dashboard({ isUser, isCustomer }) {
   const [deleteCustomer, setDeleteCustomer] = React.useState({});
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [openDeleteModal, setOpenDeleteModal] = React.useState(false);
+  const [policyCheck, setPolicyCheck] = React.useState(false);
   const [page, setPage] = React.useState("home");
+
+  const [excelKeys, setExcelKeys] = React.useState([]);
+  const [excelData, setExcelData] = React.useState([]);
+  const [fileCount, setFileCount] = React.useState(0);
 
   const [openUploadModal, setOpenUploadModal] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -478,6 +489,169 @@ export default function Dashboard({ isUser, isCustomer }) {
 
   // Practitioner
 
+  const generateAndDownloadExcel = () => {
+    var data = [];
+    excelKeys.forEach((element, index) => {
+      data.push([element, excelData[index] < 0 ? '' : Number(excelData[index]/fileCount).toFixed(2)])
+    });
+    console.log('result', excelKeys);
+    console.log('result', fileCount);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+  
+    function s2ab(s) {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xff;
+      return buf;
+    }
+  
+    FileSaver.saveAs(
+      new Blob([s2ab(wbout)], { type: 'application/octet-stream' }),
+      'average.xlsx'
+    );
+  };
+
+  const generateAndDownloadPDF = () => {
+
+    const pdf = new PDFDocument();
+    const buffers = [];
+
+    pdf.on('data', buffers.push.bind(buffers));
+    pdf.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        const blob = new Blob([pdfData], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        // Create a downloadable link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'tuto1.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url); // Clean up after download
+    });l
+
+    pdf.fontSize(16).font('Arial').text(firstName + ' ' + lastName, 20, 20);
+    pdf.text(email, 20, 30);
+
+    let setY = 40;
+    sampleData.forEach(tmp => {
+        let activeIndex = 0;
+        tmp.products.forEach(subTmp => {
+            let averageValue;
+            if (data.length === 1483 && tmp.index > 127) {
+                averageValue = Math.round(data[tmp.index] / fileCount, 2);
+            } else {
+                averageValue = Math.round(data[tmp.index + 1] / fileCount, 2);
+            }
+
+            if (subTmp.condition === 'under' && subTmp.value >= averageValue) {
+                if (setY + 29 > 250) {
+                    setY = 20;
+                    pdf.addPage();
+                }
+
+                if (activeIndex === 0) {
+                    pdf.fontSize(20).font('Arial').underline(12, setY + 8, tmp.key);
+                    pdf.fillColor(averageValue < 1 ? 'red' : 'black');
+                    setY += 15;
+                }
+
+                pdf.image(`../img/static/products/${products[subTmp.id].img}`, 10, setY, { width: 40, height: 40 });
+                pdf.fontSize(16).font('Arial').fillColor('blue').text(products[subTmp.id].name, 55, setY + 8);
+                pdf.fontSize(12).font('Arial').fillColor('black').text(distID === '' ? `https://lifewave.com/gaiahealers${products[subTmp.id].link}` : `https://lifewave.com/${distID}${products[subTmp.id].link}`, 55, setY + 13);
+                pdf.fontSize(10).font('Arial').x = 55;
+                setY += 16;
+                pdf.y = setY;
+                pdf.multiCell(130, 4, subTmp.description, { border: 0, align: 'left', fill: false });
+                setY += 29;
+                activeIndex++;
+            } else if (subTmp.condition === 'over' && subTmp.value <= averageValue) {
+                if (setY + 29 > 250) {
+                    setY = 20;
+                    pdf.addPage();
+                }
+
+                if (activeIndex === 0) {
+                    pdf.fontSize(20).font('Arial').underline(12, setY + 8, tmp.key);
+                    pdf.fillColor(averageValue > 7 ? '#ffab10' : 'black');
+                    setY += 15;
+                }
+
+                pdf.image(`../img/products/${products[subTmp.id].img}`, 10, setY, { width: 40, height: 40 });
+                pdf.fontSize(16).font('Arial').fillColor('blue').text(products[subTmp.id].name, 55, setY + 8);
+                pdf.fontSize(12).font('Arial').fillColor('black').text(distID === '' ? `https://lifewave.com/gaiahealers${products[subTmp.id].link}` : `https://lifewave.com/${distID}${products[subTmp.id].link}`, 55, setY + 13);
+                pdf.fontSize(10).font('Arial').x = 55;
+                setY += 16;
+                pdf.y = setY;
+                pdf.multiCell(130, 4, subTmp.description, { border: 0, align: 'left', fill: false });
+                setY += 29;
+                activeIndex++;
+            } else if (subTmp.condition === 'under or over' && (averageValue <= subTmp.value[0] || subTmp.value[1] <= averageValue)) {
+                if (setY + 29 > 250) {
+                    setY = 20;
+                    pdf.addPage();
+                }
+
+                if (activeIndex === 0) {
+                    pdf.fontSize(20).font('Arial');
+                    if (averageValue <= subTmp.value[0]) {
+                        pdf.fillColor(averageValue < 1 ? 'red' : 'black');
+                    } else if (subTmp.value[1] <= averageValue) {
+                        pdf.fillColor(averageValue > 7 ? '#ffab10' : 'black');
+                    } else {
+                        pdf.fillColor('black');
+                    }
+                    pdf.underline(12, setY + 8, tmp.key);
+                    setY += 15;
+                }
+
+                pdf.image(`../img/products/${products[subTmp.id].img}`, 10, setY, { width: 40, height: 40 });
+                pdf.fontSize(16).font('Arial').fillColor('blue').text(products[subTmp.id].name, 55, setY + 8);
+                pdf.fontSize(12).font('Arial').fillColor('black').text(distID === '' ? `https://lifewave.com/gaiahealers${products[subTmp.id].link}` : `https://lifewave.com/${distID}${products[subTmp.id].link}`, 55, setY + 13);
+                pdf.fontSize(10).font('Arial').x = 55;
+                setY += 16;
+                pdf.y = setY;
+                const desc = Buffer.from(subTmp.description, 'utf-8').toString();
+                pdf.multiCell(130, 4, desc, { border: 0, align: 'left', fill: false });
+                setY += 29;
+                activeIndex++;
+            }
+        });
+    });
+
+    pdf.addPage();
+    setY = 20;
+    pdf.fontSize(18).font('Arial').text('Meridian Charts', 190, { align: 'center' });
+    setY += 10;
+
+    for (let tmp = 0; tmp < 3; tmp++) {
+        pdf.image(`../img/img/${meridianData[tmp * 4].img}`, 10, setY, { width: 40, height: 60 });
+        pdf.text(10, setY + 70, meridianData[tmp * 4].name);
+        pdf.image(`../img/img/${meridianData[tmp * 4 + 1].img}`, 60, setY, { width: 40, height: 60 });
+        pdf.text(60, setY + 70, meridianData[tmp * 4 + 1].name);
+        pdf.image(`../img/img/${meridianData[tmp * 4 + 2].img}`, 110, setY, { width: 40, height: 60 });
+        pdf.text(110, setY + 70, meridianData[tmp * 4 + 2].name);
+        pdf.image(`../img/img/${meridianData[tmp * 4 + 3].img}`, 160, setY, { width: 40, height: 60 });
+        pdf.text(160, setY + 70, meridianData[tmp * 4 + 3].name);
+        setY += 80;
+    }
+
+    pdf.addPage();
+    setY = 20;
+    pdf.fontSize(18).font('Arial').text('Disclaimer', 190, { align: 'center' });
+    setY += 10;
+    pdf.fontSize(12).font('Arial').text(`The statements on LifeWave products on its websites or associated materials have not been evaluated by any regulatory authority and are not intended to diagnose, treat, cure or prevent any disease or medical condition. The content provided by LifeWave is presented in summary form, general in nature, and provided for informational purposes only. Do not disregard any medical advice you have received or delay in seeking it because of something you have read on our websites or associated materials. Please consult your own physician or appropriate health care provider about the applicability of any opinions or recommendations with respect to your own symptoms or medical conditions as these diseases commonly present with variable signs and symptoms. Always consult with your physician or other qualified health care provider before embarking on a new treatment, diet, or fitness program. We assume no liability or responsibility for damage or injury to persons or property arising from any use of any product, information, idea, or instruction contained in the materials provided to you. LifeWave reserves the right to change or discontinue at any time any aspect or feature containing our information.`, 190, { align: 'center' });
+
+    pdf.end();
+    return true;
+  };
+
   // File Input
   const handleFileChange = (event) => {
     const uploadedFiles = event.target.files;
@@ -485,6 +659,7 @@ export default function Dashboard({ isUser, isCustomer }) {
     let fileIndex = 0;
     let averageKeyData = [];
     let averageData = [];
+    setFileCount(uploadedFiles.length);
 
     const processFile = (file) => {
       const reader = new FileReader();
@@ -502,8 +677,11 @@ export default function Dashboard({ isUser, isCustomer }) {
             averageData[rowIndex] += getValue(data);
           }
         });
-
         fileIndex++;
+        if(fileIndex === uploadedFiles.length) {
+          setExcelKeys(averageKeyData);
+          setExcelData(averageData);
+        }
         console.log(averageData, averageKeyData);
       };
 
@@ -814,6 +992,7 @@ export default function Dashboard({ isUser, isCustomer }) {
                             <Checkbox
                               value="remember"
                               color="primary"
+                              onChange={() => setPolicyCheck(!policyCheck)}
                             />
                           }
                           label="I understand that the information being shared and patch recommendations are not medical advice and are not there to cure or heal any diseases"
@@ -823,22 +1002,17 @@ export default function Dashboard({ isUser, isCustomer }) {
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() => {
-                            setOpenUploadModal(true);
-                          }}
-                          style={{whiteSpace: 'nowrap', width: '20rem'}}
+                          disabled={!(policyCheck && fileCount > 0)}
+                          onClick={generateAndDownloadExcel}
+                          style={{whiteSpace: 'nowrap', width: '20rem', marginRight: '1rem'}}
                         >
                           Average File Generate
                         </Button>
-                        <IconButton sx={{mx: 1}} color="primary" aria-label="Reload">
-                          <RefreshIcon />
-                        </IconButton>
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() => {
-                            setOpenUploadModal(true);
-                          }}
+                          onClick={generateAndDownloadPDF}
+                          disabled={!(policyCheck && fileCount > 0)}
                           style={{whiteSpace: 'nowrap', width: '25rem'}}
                         >
                           Generate Recommendation PDF
