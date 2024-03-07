@@ -3,7 +3,7 @@ import * as React from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import * as XLSX from "xlsx";
-import FileSaver from 'file-saver';
+// import FileSaver from 'file-saver';
 import { toast } from "react-toastify";
 
 import { styled, useTheme } from "@mui/material/styles";
@@ -40,9 +40,9 @@ import EditCustomerModal from "@/components/customer/EditCustomerModal";
 import CustomerTable from "@/components/customer/CustomerTable";
 import UploadModal from "./UploadModal";
 
-import sampleData from '@/Json/data.json';
-import products from '@/Json/products.json';
-import meridianData from '@/Json/meridian.json';
+// import sampleData from '@/Json/data.json';
+// import products from '@/Json/products.json';
+// import meridianData from '@/Json/meridian.json';
 
 
 const drawerWidth = 300;
