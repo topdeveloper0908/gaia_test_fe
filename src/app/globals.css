@@ -176,6 +176,30 @@ button {
 .hover-link:hover {
   text-decoration: underline;
 }
+.customTable {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: Open Sans;
+  font-size: .9rem;
+}
+
+.customTable td {
+  border: 1px solid #ddd;
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
+.customTable tr:nth-child(even){background-color: #f2f2f2;}
+
+.customTable tr:hover {background-color: #ddd;}
+
+.customTable th {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  text-align: left;
+  background-color: #67bc46;
+  color: white;
+}
 @media (max-width: 767px) {
   .header button {
     min-width: 35px;

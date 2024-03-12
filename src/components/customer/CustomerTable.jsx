@@ -19,8 +19,6 @@ import { Delete, Edit, Star } from "@mui/icons-material";
 import { FaRegEdit, FaEye } from "react-icons/fa";
 import { FaStar } from "react-icons/fa6";
 import Link from "next/link";
-import styled from "@emotion/styled";
-import { API_URL } from "@/constants/constants";
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -123,7 +121,7 @@ EnhancedTableHead.propTypes = {
 export default function CustomerTable({
   data = [],
   handleEditModal,
-  handleDeleteModal
+  handleDeleteModal  
 }) {
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState("");
@@ -194,7 +192,6 @@ export default function CustomerTable({
                     </span>
                   </TableCell>
                   <TableCell align="left">
-                    
                     <span>
                         {row.address} {row.city} {row.state} {row.zipcode}
                         {row.country}
@@ -220,6 +217,7 @@ export default function CustomerTable({
                             backgroundColor: "#1C60B5",
                           },
                         }}
+                        href={`/customer/dashboard/${row.id}`}
                       >
                         <FaEye size={20} />
                       </IconButton>
@@ -258,6 +256,7 @@ export default function CustomerTable({
                     </Stack>
                   </TableCell>
                 </TableRow>
+
               );
             })}
             {visibleRows.length === 0 && (
