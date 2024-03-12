@@ -95,17 +95,7 @@ useEffect(() => {
     );
 
     const result = response.data;
-      if (result == "success") {
-        toast.success("Customer registered successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-        addCustomer(values);
-      } else if (result == "duplicated") {
+      if (result == "duplicated") {
         toast.error("Customer already exists!", {
           position: "top-right",
           autoClose: 5000,
@@ -115,6 +105,17 @@ useEffect(() => {
           draggable: true,
         });
       }
+      else {
+        toast.success("Customer registered successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        addCustomer({...values, id: response.data});
+      } 
       setIsSubmitting(false);
     };
 
