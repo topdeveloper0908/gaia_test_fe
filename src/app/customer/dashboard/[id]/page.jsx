@@ -125,7 +125,6 @@ export default function Profile({ params }) {
           toast.error("Uploaded File is not correct");
           return;
         }
-        setLoading(true);
         RecommendData.forEach(element => {
           if(customer.sex == 'Male' && element.index > 127) {
             averageData.push(rows[element.index + 2]);
@@ -144,11 +143,13 @@ export default function Profile({ params }) {
             "Content-Type": "application/json",
           },
         });
-          setLoading(false);
-          var found = false;
           var tmp = data;
           formData.id = response.data;
-          if(response.data > data[data.length-1].id) {
+          if(data.length == 0) {
+            toast.success("Created successfully");
+            tmp.push(formData);
+          }
+          else if(response.data > data[data.length-1].id) {
             toast.success("Created successfully");
             tmp.push(formData);
           } else {
