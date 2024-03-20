@@ -300,7 +300,7 @@ export default function CustomTable({
                         }}
                         href={
                           !row.profileLink || row.profileLink == ''
-                            ? `/profile/${row.id}`
+                            ? `/practitioner/profile/${row.id}`
                             : row.profileLink
                         }
                         target="_blank"

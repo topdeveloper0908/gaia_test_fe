@@ -214,7 +214,7 @@ export default function UserInfoModal({ open, handleClose, user }) {
                 Schedule a Meeting
               </Button>
               <Button
-                href={`/profile/${user.id}`}
+                href={`/practitioner/profile/${user.id}`}
                 variant="outlined"
                 co="correctValue"
                 onClick={(e) => {

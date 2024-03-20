@@ -5,7 +5,17 @@ import { useFormik } from "formik";
 import { use, useEffect, useState } from "react";
 import * as Yup from "yup";
 import axios from "axios";
-import { SelectModal } from "@/app/register/page";
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Checkbox from '@mui/material/Checkbox';
+import ListItemText from '@mui/material/ListItemText';
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+
+const apiList = [
+  'Heart Cloud',
+  'Biowell API',
+  'Apple Health'
+];
 
 const {
   Modal,
@@ -31,6 +41,17 @@ export default function EditCustomerModal({
   user
 }) {
   const [countries, setCountries] = useState([]);
+  const [selectedAPI, setSelectedAPI] = useState([]);
+
+  const apiListhandleChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedAPI(
+      // On autofill we get a stringified value.
+      typeof value === 'string' ? value.split(',') : value,
+    );
+  };
 
   useEffect(() => {
     axios
@@ -46,7 +67,15 @@ export default function EditCustomerModal({
   const formik = useFormik({
     initialValues: {...user, password: ''},
     onSubmit: (values) => {
-      handleConfirm(values);
+      if(!selectedAPI.includes('Heart Cloud')) {
+        values.h_email = '';
+        values.h_id = '';
+        values.h_key = '';
+        values.h_password = '';
+        values.h_token = '';
+        values.h_token_expried = '';
+      }
+      handleConfirm({...values, id: user.id, apis: selectedAPI.join(',')});
     },
   });
 
@@ -57,6 +86,9 @@ export default function EditCustomerModal({
         "country",
         countries.find((c) => c.text === user.country).value
       );
+    }
+    if(user.apis) {
+      setSelectedAPI(user.apis.split(','));
     }
   }, [user]);
 
@@ -94,7 +126,7 @@ export default function EditCustomerModal({
         >
           Edit Customer
         </h3>
-        <Divider component={"div"} fullWidth />
+        <Divider component={"div"} />
         <Box
           px={4}
           py={3}
@@ -107,8 +139,6 @@ export default function EditCustomerModal({
           <Stack direction="row" spacing={2}>
             <TextField
               size="small"
-              margin="normal"
-              fullWidth
               id="firstname"
               label="First Name"
               name="firstname"
@@ -121,8 +151,6 @@ export default function EditCustomerModal({
             />
             <TextField
               size="small"
-              margin="normal"
-              fullWidth
               id="lastname"
               label="Last Name"
               name="lastname"
@@ -137,9 +165,7 @@ export default function EditCustomerModal({
           
           <Stack spacing={2} direction="row">
             <TextField
-              size="small"
-              margin="normal"
-              fullWidth
+              size="small"            
               id="password"
               label="Password"
               name="password"
@@ -150,11 +176,7 @@ export default function EditCustomerModal({
               value={formik.values.password}
               required
             />
-            <FormControl
-              sx={{
-                width: "33%",
-              }}
-            >
+            <FormControl sx={{width: '50%'}}>
               <InputLabel id="demo-simple-select-label">Sex</InputLabel>
               <Select
                 size="small"
@@ -173,7 +195,6 @@ export default function EditCustomerModal({
           <Stack direction="row" spacing={2}>
             <TextField
               size="small"
-              fullWidth
               id="address"
               label="Address"
               name="address"
@@ -185,7 +206,6 @@ export default function EditCustomerModal({
             />
             <TextField
               size="small"
-              fullWidth
               id="city"
               label="City"
               name="city"
@@ -229,7 +249,6 @@ export default function EditCustomerModal({
               <InputLabel id="demo-simple-select-label">Country</InputLabel>
               <Select
                 size="small"
-                margin="normal"
                 id="country"
                 label="Country"
                 name="country"
@@ -273,9 +292,106 @@ export default function EditCustomerModal({
               value={formik.values.phone}
               required
             />
+            <FormControl sx={{width: '50%'}}>
+              <InputLabel size="small" id="demo-multiple-checkbox-label">API List</InputLabel>
+              <Select
+                labelId="demo-multiple-checkbox-label"
+                id="demo-multiple-checkbox"
+                multiple
+                size="small"
+                value={selectedAPI}
+                onChange={apiListhandleChange}
+                input={<OutlinedInput label="API List" />}
+                renderValue={(selected) => selected.join(', ')}
+              >
+                {apiList.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    <Checkbox checked={selectedAPI.indexOf(name) > -1} />
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Stack>
+          {
+            selectedAPI.includes('Heart Cloud') && (
+              <>
+                <Typography
+                  sx={{ color: "black", width: "100%" }}
+                  variant={"h6"}
+                  align="center"
+                >
+                  Heart Cloud Information
+                </Typography>
+                <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+                  <Stack direction="row" spacing={2} justifyContent={"center"}>
+                    <TextField
+                      size="small"
+                      margin="normal"
+                      fullWidth
+                      id="h_email"
+                      label="Email"
+                      name="h_email"
+                      autoComplete="h_email"
+                      autoFocus
+                      type="email"
+                      onChange={formik.handleChange}
+                      value={formik.values.h_email}
+                      required = {selectedAPI.includes('Heart Cloud')}
+                    />
+                    <TextField
+                      size="small"
+                      margin="normal"
+                      fullWidth
+                      id="h_password"
+                      label="Password"
+                      name="h_password"
+                      autoComplete="h_password"
+                      autoFocus
+                      type="text"
+                      onChange={formik.handleChange}
+                      value={formik.values.h_password}
+                      required = {selectedAPI.includes('Heart Cloud')}
+                    />
+                  </Stack>
+                </Grid>
+                <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+                  <Stack direction="row" spacing={2} justifyContent={"center"}>
+                    <TextField
+                      size="small"
+                      margin="normal"
+                      fullWidth
+                      id="h_key"
+                      label="API Key"
+                      name="h_key"
+                      autoComplete="h_key"
+                      autoFocus
+                      type="text"
+                      onChange={formik.handleChange}
+                      value={formik.values.h_key}
+                      required = {selectedAPI.includes('Heart Cloud')}
+                    />
+                    <TextField
+                      size="small"
+                      margin="normal"
+                      fullWidth
+                      id="h_id"
+                      label="Client ID"
+                      name="h_id"
+                      autoComplete="h_id"
+                      autoFocus
+                      type="text"
+                      onChange={formik.handleChange}
+                      value={formik.values.h_id}
+                      required = {selectedAPI.includes('Heart Cloud')}
+                    />
+                  </Stack>
+                </Grid>
+              </>
+            )
+          }
         </Box>
-        <Divider component={"div"} fullWidth />
+        <Divider component={"div"}/>
         <Stack
           direction="row"
           spacing={1}

@@ -849,7 +849,6 @@ export default function Dashboard({ isUser, isCustomer }) {
                 <Stack alignItems={'center'} direction="row">
                   <TextField
                     size="small"
-                    fullWidth
                     id="searchWord"
                     label="Search...."
                     name="searchWord"
@@ -902,125 +901,6 @@ export default function Dashboard({ isUser, isCustomer }) {
                     />
                   </Box>
                 </>)
-                }
-                {
-                  page === 'lifewave' && 
-                    (<>
-                      <Stack direction="row" justifyContent={"center"} mb={11}>
-                        <Typography
-                          sx={{ fontWeight: "bold", color: "black" }}
-                          variant={"h5"}
-                        >
-                          Bio-Well Recommendations for 
-                        </Typography>
-                        <Typography 
-                          ml={1}
-                          color='primary'
-                          sx={{ fontWeight: "bold" }}
-                          variant={"h5"}
-                        > Lifewave Patches</Typography>
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto'>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="Lifewave Account Username"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          onChange={searchPractitioner}
-                          value={search}
-                        />
-                        <Box mr={1}></Box>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="Email"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          disabled
-                          value={userProfile.email}
-                        />
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="First Name"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          disabled
-                          value={userProfile.firstname}
-                        />
-                        <Box mr={1}></Box>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          id="searchWord"
-                          label="Last Name"
-                          name="searchWord"
-                          autoComplete="searchWord"
-                          autoFocus
-                          type="text"
-                          disabled
-                          value={userProfile.lastname}
-                        />
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
-                        <Button
-                          component="label"
-                          role={undefined}
-                          variant="outlined"
-                          tabIndex={-1}
-                          sx={{py:10}}
-                          fullWidth
-                        >
-                          <CloudUploadIcon sx={{ fontSize: 100 }} />
-                          <VisuallyHiddenInput type="file" onChange={handleFileChange} multiple accept=".csv, .xlsx" />
-                        </Button>
-                      </Stack>
-                      <Stack alignItems={'center'} direction="row" maxWidth={'40rem'} mx='auto' mt={4}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              value="remember"
-                              color="primary"
-                              onChange={() => setPolicyCheck(!policyCheck)}
-                            />
-                          }
-                          label="I understand that the information being shared and patch recommendations are not medical advice and are not there to cure or heal any diseases"
-                        />
-                      </Stack>
-                      <Stack alignItems={'center'} justifyContent='center' direction="row" maxWidth={'30rem'} mx='auto' mt={4}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          disabled={!(policyCheck && fileCount > 0)}
-                          onClick={generateAndDownloadExcel}
-                          style={{whiteSpace: 'nowrap', width: '20rem', marginRight: '1rem'}}
-                        >
-                          Average File Generate
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={generateAndDownloadPDF}
-                          disabled={!(policyCheck && fileCount > 0)}
-                          style={{whiteSpace: 'nowrap', width: '25rem'}}
-                        >
-                          Generate Recommendation PDF
-                        </Button>
-                      </Stack>
-                      
-                    </>)
                 }
               </>
               : 
@@ -1148,12 +1028,6 @@ const Sidebar = ({
           active: page === "customers",
         },
         {
-          name: "Lifewave Patches",
-          icon: MicrowaveIcon,
-          onClick: () => setPage("lifewave"),
-          active: page === "lifewave",
-        },
-        {
           name: "Sign out",
           icon: Logout,
           onClick: () => {
@@ -1198,35 +1072,35 @@ const Sidebar = ({
                   src={
                     "https://storage.googleapis.com/msgsndr/WkKl1K5RuZNQ60xR48k6/media/65b5b34a0dbca137ef4f425e.png"
                   }
-                  sx={{ width: 100, height: 100 }}
+                  sx={{ width: 150, height: 150 }}
                 />
               ) : (
                 <Avatar
                   src={
                     "https://storage.googleapis.com/msgsndr/WkKl1K5RuZNQ60xR48k6/media/65b5b34ab7ea181193716085.png"
                   }
-                  sx={{ width: 100, height: 100 }}
+                  sx={{ width: 150, height: 150 }}
                 />
               )
             ) : (
               <Avatar
                 src={userProfile.imageURL}
                 alt={userProfile.firstname}
-                sx={{ width: 100, height: 100 }}
+                sx={{ width: 150, height: 150 }}
               />
             )
           ) : (
             <Avatar
               src={API_URL + "src/" + userProfile.imageURL}
               alt={userProfile.firstname}
-              sx={{ width: 100, height: 100 }}
+              sx={{ width: 150, height: 150 }}
             />
           ))}
         {!isUser && (
           <Avatar
             alt="Remy Sharp"
             src="https://biohackingcongress.com/storage/users/June2023/9Q67Ebbs5rPLWWmWGZET.png"
-            sx={{ width: 100, height: 100 }}
+            sx={{ width: 150, height: 150 }}
           />
         )}
 

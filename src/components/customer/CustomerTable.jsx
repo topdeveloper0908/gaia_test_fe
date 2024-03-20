@@ -217,7 +217,7 @@ export default function CustomerTable({
                             backgroundColor: "#1C60B5",
                           },
                         }}
-                        href={`/customer/dashboard/${row.id}`}
+                        href={`/practitioner/customer/${row.id}`}
                       >
                         <FaEye size={20} />
                       </IconButton>

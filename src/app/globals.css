@@ -200,6 +200,22 @@ button {
   background-color: #67bc46;
   color: white;
 }
+
+.customTable.day-customTable th {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  text-align: center;
+  background-color: white;
+  color: #333;
+}
+
+.customTable.day-customTable td {
+  text-align: center;
+  color: white;
+  border-color: white;
+  border-left: 0;
+  border-right: 0;
+}
 @media (max-width: 767px) {
   .header button {
     min-width: 35px;

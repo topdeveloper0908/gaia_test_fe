@@ -943,7 +943,7 @@ export default function Home() {
                                     Schedule a Meeting
                                   </Button>
                                   <Button
-                                    href={element.profileLink === '' ? `/profile/${element.id}` : element.profileLink}
+                                    href={element.profileLink === '' ? `/practitioner/profile/${element.id}` : element.profileLink}
                                     variant="outlined"
                                     co="correctValue"
                                     onClick={(e) => {

@@ -4,6 +4,8 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 
 import { toast } from "react-toastify";
+import Cookies from "js-cookie";
+import axios from "axios";
 
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -14,27 +16,43 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Stack from "@mui/material/Stack";
-import Cookies from "js-cookie";
-import axios from "axios";
+import Checkbox from '@mui/material/Checkbox';
+import ListItemText from '@mui/material/ListItemText';
+import Typography from "@mui/material/Typography";
+import OutlinedInput from '@mui/material/OutlinedInput';
 
 export default function AddCustomer({addCustomer}) {
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const token = Cookies.get("token");
-const [countries, setCountries] = useState([]);
-const [isSubmitting, setIsSubmitting] = useState(false);
+  const token = Cookies.get("token");
+  const [countries, setCountries] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAPI, setSelectedAPI] = React.useState([]);
 
-useEffect(() => {
-    axios
-      .get("https://trial.mobiscroll.com/content/countries.json")
-      .then((res) => {
-        const data = res.data;
-        data.push({ value: "CA", text: "Canada", group: "C" });
-        data.sort((a, b) => a.text.localeCompare(b.text));
-        setCountries(data);
-      });
-}, []);
+  const apiListhandleChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedAPI(value)
+  };
+
+  const apiList = [
+    'Heart Cloud',
+    'Biowell API',
+    'Apple Health'
+  ];
+
+  useEffect(() => {
+      axios
+        .get("https://trial.mobiscroll.com/content/countries.json")
+        .then((res) => {
+          const data = res.data;
+          data.push({ value: "CA", text: "Canada", group: "C" });
+          data.sort((a, b) => a.text.localeCompare(b.text));
+          setCountries(data);
+        });
+  }, []);
 
   // yup
   const validationSchema = Yup.object().shape({
@@ -49,7 +67,12 @@ useEffect(() => {
     zipcode: Yup.string(),
     country: Yup.string(),
     password: Yup.string(),
-    passwordConfirm: Yup.string()
+    passwordConfirm: Yup.string(),
+    h_key: Yup.string(),
+    h_email: Yup.string(),
+    h_id: Yup.string(),
+    h_password: Yup.string(),
+    apis: Yup.array(),
   });
 
   // formik
@@ -65,12 +88,23 @@ useEffect(() => {
     zipcode: "",
     country: "US",
     password: "",
-    passwordConfirm: ""
+    passwordConfirm: "",
+    h_id: "",
+    h_email: "",
+    h_password: "",
+    h_key: "",
+    apis: []
   };
 
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
     console.log(values);
+    if(!selectedAPI.includes('Heart Cloud')) {
+      values.h_email = '';
+      values.h_id = '';
+      values.h_key = '';
+      values.h_password = '';
+    }
     if(values.password !== values.passwordConfirm) {
       toast.error("Password should be matched", {
         position: "top-right",
@@ -85,7 +119,7 @@ useEffect(() => {
     }
     const response = await axios.post(
       `${API_URL}customer_new`,
-      JSON.stringify(values),
+      JSON.stringify({...values, apis: selectedAPI.join(',')}),
       {
         headers: {
           "Content-Type": "application/json",
@@ -114,16 +148,17 @@ useEffect(() => {
           pauseOnHover: true,
           draggable: true,
         });
-        addCustomer({...values, id: response.data});
+        addCustomer({...values, apis: selectedAPI.join(','), id: response.data});
       } 
       setIsSubmitting(false);
-    };
+  };
 
   const formik = useFormik({
     initialValues: initialValues,
     validationSchema,
     onSubmit: handleSubmit,
   });
+
 
   return (
     <Grid
@@ -321,7 +356,107 @@ useEffect(() => {
             </Select>
           </FormControl>
         </Stack>
+        <Stack>
+          <FormControl fullWidth>
+            <InputLabel size="small" id="demo-multiple-checkbox-label">API List</InputLabel>
+            <Select
+              fullWidth
+              labelId="demo-multiple-checkbox-label"
+              id="demo-multiple-checkbox"
+              multiple
+              size="small"
+              value={selectedAPI}
+              onChange={apiListhandleChange}
+              input={<OutlinedInput label="API List" />}
+              renderValue={(selected) => selected.join(', ')}
+            >
+              {apiList.map((name) => (
+                <MenuItem key={name} value={name}>
+                  <Checkbox checked={selectedAPI.indexOf(name) > -1} />
+                  <ListItemText primary={name} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </Grid>
+      {
+        selectedAPI.includes('Heart Cloud') && (
+          <>
+            <Typography
+              sx={{ fontWeight: "bold", color: "black", width: "100%", mt: "3rem" }}
+              variant={"h5"}
+              align="center"
+            >
+              Add Heart Cloud Information
+            </Typography>
+            <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+              <Stack direction="row" spacing={2} justifyContent={"center"}>
+                <TextField
+                  size="small"
+                  margin="normal"
+                  fullWidth
+                  id="h_email"
+                  label="Email"
+                  name="h_email"
+                  autoComplete="h_email"
+                  autoFocus
+                  type="email"
+                  onChange={formik.handleChange}
+                  value={formik.values.h_email}
+                  required = {selectedAPI.includes('Heart Cloud')}
+                />
+                <TextField
+                  size="small"
+                  margin="normal"
+                  fullWidth
+                  id="h_password"
+                  label="Password"
+                  name="h_password"
+                  autoComplete="h_password"
+                  autoFocus
+                  type="text"
+                  onChange={formik.handleChange}
+                  value={formik.values.h_password}
+                  required = {selectedAPI.includes('Heart Cloud')}
+                />
+              </Stack>
+            </Grid>
+            <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+              <Stack direction="row" spacing={2} justifyContent={"center"}>
+                <TextField
+                  size="small"
+                  margin="normal"
+                  fullWidth
+                  id="h_key"
+                  label="API Key"
+                  name="h_key"
+                  autoComplete="h_key"
+                  autoFocus
+                  type="text"
+                  onChange={formik.handleChange}
+                  value={formik.values.h_key}
+                  required = {selectedAPI.includes('Heart Cloud')}
+                />
+                <TextField
+                  size="small"
+                  margin="normal"
+                  fullWidth
+                  id="h_id"
+                  label="Client ID"
+                  name="h_id"
+                  autoComplete="h_id"
+                  autoFocus
+                  type="text"
+                  onChange={formik.handleChange}
+                  value={formik.values.h_id}
+                  required = {selectedAPI.includes('Heart Cloud')}
+                />
+              </Stack>
+            </Grid>
+          </>
+        )
+      }
       <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
         <Button
           type="submit"

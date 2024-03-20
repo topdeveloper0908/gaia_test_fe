@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useFormik } from "formik";
+import Cookies from "js-cookie";
 import * as Yup from "yup";
 import {
   Box,
@@ -34,16 +35,18 @@ import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Checkbox from '@mui/material/Checkbox';
 import dayjs from 'dayjs';
 
-import { House } from "@mui/icons-material";
-import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
+import { House, Logout } from "@mui/icons-material";
 
 import Loading from "@/components/Loading";
 import RecommendationTable from "@/components/customer/RecommendationTable";
 import RecommendData from "@/Json/data.json"
+
+import DayResult from "@/components/customer/heartcloud/DayResult"
+import CustomResult from "@/components/customer/heartcloud/CustomResult"
 
 
 const drawerWidth = 300;
@@ -78,6 +81,12 @@ const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   })
 );
 
+const apiList = [
+    'Heart Cloud',
+    'Biowell API',
+    'Apple Health'
+];
+  
 export default function Profile({ params }) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -92,31 +101,22 @@ export default function Profile({ params }) {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = React.useState(true);
-  const [page, setPage] = React.useState("profile");
+  const [page, setPage] = React.useState("home");
   const [countries, setCountries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAPI, setSelectedAPI] = React.useState([]);
+  const [loadingText, setLoadingText] = React.useState('Loading...');
 
-  const [heart_startDate, setHeartStartDate] = React.useState(dayjs());
-  const [heart_endDate, setHeartEndDate] = React.useState(dayjs());
-  const [heartRangeType, setHeartRangeType] = React.useState('day');
+  const [heart_startDate, setHeartStartDate] = React.useState(null);
+  const [heart_endDate, setHeartEndDate] = React.useState(null);
+  const [heartRangeType, setHeartRangeType] = React.useState(null);
   const [heartData, setHeartData] = React.useState([]);
 
-  
-  
-  const seriesA = {
-    data: [50, 40, 30, 20, 10, 50, 40, 30, 20, 10], // Updated data values for seriesA
-    label: 'High',
-    color: '#5abf1f'
-  };
-  const seriesB = {
-    data: [30, 20, 40, 10, 50, 30, 20, 40, 10, 5], // Updated data values for seriesB
-    label: 'Medium',
-    color: '#307ae0'
-  };
-  const seriesC = {
-    data: [20, 30, 10, 40, 30, 20, 30, 10, 40, 50],
-    label: 'Low',
-    color: '#e5454d'
+  const apiListhandleChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedAPI(value)
   };
 
   // yup
@@ -223,7 +223,6 @@ export default function Profile({ params }) {
 
   
   // Bio - Well API
-  
   const handleDatePicker = (e) => {
     setClickedInput(e.target.id)
     setModalDateIsOpen(true)
@@ -243,7 +242,7 @@ export default function Profile({ params }) {
       reader.onload = async (e) => {
         const fileContent = e.target.result;
         const rows = fileContent.split('\n');
-        if(customer.sex == 'Male') {
+        if(customer?.sex == 'Male') {
           if(rows.length !== 1485) {
             toast.error("Uploaded File is not correct");
             return;
@@ -254,7 +253,7 @@ export default function Profile({ params }) {
           return;
         }
         RecommendData.forEach(element => {
-          if(customer.sex == 'Male' && element.index > 127) {
+          if(customer?.sex == 'Male' && element.index > 127) {
             averageData.push(rows[element.index + 2]);
           } else {
             averageData.push(rows[element.index + 1]);
@@ -301,6 +300,7 @@ export default function Profile({ params }) {
   };
 
   const fetchData = async () => {
+    setLoading(true);
     const formData = {
       id: params.id,
     };
@@ -310,18 +310,17 @@ export default function Profile({ params }) {
           "Content-Type": "application/json",
         },
       });
-      console.log(response);
-        formik.setValues({...response.data[0][0], password: ''});
-        setCustomer(response.data[0][0]);
-        setData(response.data[1]);
-        setHeartData(response.data[2]);
-        if(response.data[1].length > 0) {
-          response.data[1].forEach(element => {
-            if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
-              setCurrentData(element);
-            }
-          });
-        }
+        console.log('response', response.data);
+        setCustomer(response.data[0]);
+        // setData(response.data[1]);
+        // setHeartData(response.data[2]);
+        // if(response.data[1].length > 0) {
+        //   response.data[1].forEach(element => {
+        //     if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
+        //       setCurrentData(element);
+        //     }
+        //   });
+        // }
         setLoading(false);
     } catch (error) {
         console.error("Error fetching data:", error);
@@ -418,6 +417,112 @@ export default function Profile({ params }) {
       }
     }
   }, [rangeType]);
+
+  React.useEffect(() => {
+    console.log('customer', customer);
+    if(page == 'heartCloud') {
+      if(customer.h_token == null || customer.h_token == '') {
+        integrateHeartAPI();
+      } else if(!dayjs().isBefore(dayjs(customer.h_token_expried))) {
+        integrateHeartAPI();
+      } else {
+        setHeartEndDate(dayjs());
+        setHeartRangeType('day');
+        getHeartData('day');
+      }
+    }
+  }, [page]);
+
+  const integrateHeartAPI = async () => {
+    setLoadingText('Integrating Heart Cloud API. Please Wait...')
+    setLoading(true);
+    const formData = {
+      id: customer.id,
+      h_id: customer.h_id,
+      h_key: customer.h_key,
+      h_password: customer.h_password,
+      h_email: customer.h_email
+    };
+    try {
+        const response = await axios.post(`${API_URL}integrate/heart`, formData, {
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+      if(response.data.indexOf('failed_') > -1) {
+          toast.error(`${response.data.substring(7)}`, {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+          });
+          setPage('home');
+      } else {
+          toast.succss("Integration successful!", {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+          });
+          setCustomer({...tmpCustomer, h_token: response.data})
+      }
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+    setLoadingText('Loading...')
+    setLoading(false);
+  }
+
+  useEffect(()=>{
+    if(heartRangeType != null) {
+      if(heartRangeType == 'custom') {
+        if(!(heart_endDate == null || heart_startDate == null)) {
+          getHeartData(heartRangeType);
+        }  
+      } else {
+        getHeartData(heartRangeType);
+      }
+    }
+  }, [heartRangeType])
+
+  useEffect(()=>{
+    if(heartRangeType != 'day') {
+      if(!(heart_endDate == null || heart_startDate == null)) {
+        getHeartData('custom');
+      }
+    }
+    if(heartRangeType == 'day' && heart_endDate != null) {
+      getHeartData('day');
+    }
+  }, [heart_endDate, heart_startDate])
+
+  const getHeartData = async (type) => {
+    setLoading(true);
+    var formData = {
+        type: type,
+        token: customer?.h_token,
+        key: customer?.h_key,
+    }
+    if( type == 'day') {
+        formData.day = heart_endDate;
+    } else if( type == 'custom') {
+        formData.startDate = heart_startDate;
+        formData.endDate = heart_endDate;
+    }
+    await axios
+      .post(`${API_URL}api/heart`, formData)
+      .then((res) => {
+        setHeartData(res.data['Sessions']);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    setLoading(false);
+  }
 
   // HeartCloud API
   const dateHeartRangeChange = (event) => {
@@ -657,6 +762,29 @@ export default function Profile({ params }) {
                                   </Select>
                                 </FormControl>
                               </Stack>
+                              <Stack>
+                                <FormControl fullWidth>
+                                    <InputLabel size="small" id="demo-multiple-checkbox-label">API List</InputLabel>
+                                    <Select
+                                    fullWidth
+                                    labelId="demo-multiple-checkbox-label"
+                                    id="demo-multiple-checkbox"
+                                    multiple
+                                    size="small"
+                                    value={selectedAPI}
+                                    onChange={apiListhandleChange}
+                                    input={<OutlinedInput label="API List" />}
+                                    renderValue={(selected) => selected.join(', ')}
+                                    >
+                                    {apiList.map((name) => (
+                                        <MenuItem key={name} value={name}>
+                                        <Checkbox checked={selectedAPI.indexOf(name) > -1} />
+                                        <ListItemText primary={name} />
+                                        </MenuItem>
+                                    ))}
+                                    </Select>
+                                </FormControl>
+                               </Stack>
                             </Grid>
                             <Grid item md={12}>
                               <Stack direction="row" justifyContent={"center"} mt={3}>
@@ -821,59 +949,7 @@ export default function Profile({ params }) {
                             >
                               HeartCloud Data
                             </Typography>
-                            <Typography
-                              variant={"h5"}
-                              mb={1}
-                            >
-                              Latest Sessions
-                            </Typography>
-                            <table className="customTable">
-                              <tbody>
-                                  <tr>
-                                    <td>Level</td>
-                                    <td style={{textAlign:'center', background: '#913ac2', color: 'white', borderColor: 'white'}}>{[...Array(Number(heartData[heartData.length-1].ChallengeLevel))].map((_, i) => (
-                                        <FaStar size={14} />
-                                    ))}</td>
-                                    <td style={{textAlign:'center', background: '#913ac2', color: 'white', borderColor: 'white'}}>{[...Array(Number(heartData[heartData.length-2].ChallengeLevel))].map((_, i) => (
-                                        <FaStar size={14} />
-                                    ))}</td>
-                                    <td style={{textAlign:'center', background: '#913ac2', color: 'white', borderColor: 'white'}}>{[...Array(Number(heartData[heartData.length-3].ChallengeLevel))].map((_, i) => (
-                                        <FaStar size={14} />
-                                    ))}</td>
-                                    <td style={{textAlign:'center', background: '#913ac2', color: 'white', borderColor: 'white'}}>{[...Array(Number(heartData[heartData.length-4].ChallengeLevel))].map((_, i) => (
-                                        <FaStar size={14} />
-                                    ))}</td>
-                                  </tr>
-                                  <tr>
-                                    <td>Achievement</td>
-                                    <td style={{textAlign:'center', background: '#5abf1f', color: 'white', borderColor: 'white'}}>{heartData[heartData.length-1].Achievement}</td>
-                                    <td style={{textAlign:'center', background: '#5abf1f', color: 'white', borderColor: 'white'}}>{heartData[heartData.length-2].Achievement}</td>
-                                    <td style={{textAlign:'center', background: '#5abf1f', color: 'white', borderColor: 'white'}}>{heartData[heartData.length-3].Achievement}</td>
-                                    <td style={{textAlign:'center', background: '#5abf1f', color: 'white', borderColor: 'white'}}>{heartData[heartData.length-4].Achievement}</td>
-                                  </tr>
-                                  <tr>
-                                    <td>AvgCoherence</td>
-                                    <td style={{textAlign:'center', background: '#ff8400', color: 'white', borderColor: 'white'}}>{parseFloat(heartData[heartData.length-1].AvgCoherence).toFixed(2)}</td>
-                                    <td style={{textAlign:'center', background: '#ff8400', color: 'white', borderColor: 'white'}}>{parseFloat(heartData[heartData.length-2].AvgCoherence).toFixed(2)}</td>
-                                    <td style={{textAlign:'center', background: '#ff8400', color: 'white', borderColor: 'white'}}>{parseFloat(heartData[heartData.length-3].AvgCoherence).toFixed(2)}</td>
-                                    <td style={{textAlign:'center', background: '#ff8400', color: 'white', borderColor: 'white'}}>{parseFloat(heartData[heartData.length-4].AvgCoherence).toFixed(2)}</td>
-                                  </tr>
-                                  <tr>
-                                    <td>Device</td>
-                                    <td style={{textAlign:'center', background: '#f4c61b', color: 'white', borderColor: 'white'}}><PhoneAndroidIcon sx={{mt: '.4rem'}} /></td>
-                                    <td style={{textAlign:'center', background: '#f4c61b', color: 'white', borderColor: 'white'}}><PhoneAndroidIcon sx={{mt: '.4rem'}} /></td>
-                                    <td style={{textAlign:'center', background: '#f4c61b', color: 'white', borderColor: 'white'}}><PhoneAndroidIcon sx={{mt: '.4rem'}} /></td>
-                                    <td style={{textAlign:'center', background: '#f4c61b', color: 'white', borderColor: 'white'}}><PhoneAndroidIcon sx={{mt: '.4rem'}} /></td>
-                                  </tr>
-                                  <tr>
-                                    <td>Date</td>
-                                    <td style={{textAlign:'center'}}>{convertDate(parseFloat(heartData[heartData.length-1].IBIStartTime))}</td>
-                                    <td style={{textAlign:'center'}}>{convertDate(parseFloat(heartData[heartData.length-2].IBIStartTime))}</td>
-                                    <td style={{textAlign:'center'}}>{convertDate(parseFloat(heartData[heartData.length-3].IBIStartTime))}</td>
-                                    <td style={{textAlign:'center'}}>{convertDate(parseFloat(heartData[heartData.length-4].IBIStartTime))}</td>
-                                  </tr>
-                              </tbody>
-                            </table>
+                       
                             <Box mt={6} display='flex' alignItems='center' justifyContent='space-between'>
                               <Box display='flex'>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -892,7 +968,7 @@ export default function Profile({ params }) {
                                         <DatePicker
                                             label="To"
                                             value={heart_endDate}
-                                            disabled={heartRangeType != 'custom'}
+                                            disabled={heartRangeType == 'week' || heartRangeType == 'month'}
                                             onChange={(newValue) => setHeartEndDate(newValue)}
                                         />
                                     </DemoContainer>
@@ -907,24 +983,20 @@ export default function Profile({ params }) {
                                     value={heartRangeType}
                                     onChange={dateHeartRangeChange}
                                   >
-                                    <MenuItem value="day" selected>Today</MenuItem>
+                                    <MenuItem value="day" selected>One Day</MenuItem>
                                     <MenuItem value="week">Last Week</MenuItem>
                                     <MenuItem value="month">Last Month</MenuItem>
                                     <MenuItem value="custom">Custom</MenuItem>
                                   </Select>
                                 </FormControl>
                             </Box>
-                            <Box mt={1}></Box>
-                            <LineChart
-                              xAxis={[{ data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }]}
-                              series={[
-                                {
-                                  data: [2, 3, 5.5, 8.5, 1.5, 5, 1, 4, 3, 8]
-                                },
-                              ]}
-                              width={1200}
-                              height={300}
-                            />
+                            <Box mt={5}></Box>
+                            {
+                                heartRangeType === 'day' && <DayResult data={heartData}></DayResult>
+                            }
+                            {
+                                (heartRangeType === 'month' || heartRangeType === 'week' || heartRangeType === 'custom') && <CustomResult data={heartData}></CustomResult>
+                            }
                           </>
                       )
                   }
@@ -933,7 +1005,7 @@ export default function Profile({ params }) {
             </Main>
         </Box>
       ) : (
-        <Loading />
+        <Loading text={loadingText}/>
       )}
     </Box>
   );
@@ -945,13 +1017,7 @@ const Sidebar = ({
     setPage,
     customer
   }) => {
-    const buttons = [
-        {
-          name: "Profile",
-          icon: House,
-          onClick: () => setPage("profile"),
-          active: page === "profile"
-        },
+    var buttons = [
         {
           name: "Recommendations",
           icon: House,
@@ -963,8 +1029,19 @@ const Sidebar = ({
           icon: House,
           onClick: () => setPage("heartCloud"),
           active: page === "heartCloud"
-        }
-      ] ;
+        },
+        {
+            name: "Sign out",
+            icon: Logout,
+            onClick: () => {
+              Cookies.remove("token");
+              window.location.href = "/login";
+            },
+        },
+    ];
+    if(customer?.apis?.split(',').indexOf('Heart Cloud') == -1) {
+        buttons.splice(1, 1);
+    }
     return (
       <Drawer
         sx={{
@@ -994,7 +1071,7 @@ const Sidebar = ({
           }}
         >
           {
-            customer.sex == "Male" ? (
+            customer?.sex == "Male" ? (
               <Avatar
                 src={
                   "https://storage.googleapis.com/msgsndr/WkKl1K5RuZNQ60xR48k6/media/65b5b34a0dbca137ef4f425e.png"
@@ -1020,7 +1097,7 @@ const Sidebar = ({
               mt: '1rem'
             }}
           >
-            {customer.firstname} {customer.lastname}
+            {customer?.firstname} {customer?.lastname}
           </Typography>
         </Box>
         <List
@@ -1052,5 +1129,5 @@ const Sidebar = ({
         </List>
       </Drawer>
     );
-  };
+};
   

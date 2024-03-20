@@ -124,6 +124,33 @@ export default function SignIn() {
       }
     }
   };
+
+  // useEffect(()=>{
+  //   const response = axios.post(
+  //     `http://15.197.225.88/epc/rpc.php`,
+  //       {
+  //         "id": 1,
+  //         "jsonrpc": "2.0",
+  //         "method": "user_getInfo",
+  //         "params": {
+  //             "environment": {
+  //                 "cpu": "arm64",
+  //                 "ostype": "mac",
+  //                 "osversion": "12.4"
+  //             },
+  //             "lang": "en",
+  //             "logindata": "AwI+eWupNI3G+uttWIhEp+yFxwty6y3AieSlbxHfTajjjZ9RfeEsyYG7+zYdhw+n8Z/VQH63L5c=",
+  //             "softversion": "6.0.6.26"
+  //         }
+  //     },
+  //     {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     }
+  //   );
+  //   console.log('response', response);
+  // }, []);
   return (
     <Box
       height="100vh"
