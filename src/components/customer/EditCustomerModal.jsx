@@ -24,13 +24,10 @@ const {
   Button,
   Stack,
   TextField,
-  FormControlLabel,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  RadioGroup,
-  Radio,
 } = require("@mui/material");
 
 export default function EditCustomerModal({
