@@ -70,7 +70,6 @@ export default function EditCustomerModal({
         values.h_key = '';
         values.h_password = '';
         values.h_token = '';
-        values.h_token_expried = '';
       }
       handleConfirm({...values, id: user.id, apis: selectedAPI.join(',')});
     },

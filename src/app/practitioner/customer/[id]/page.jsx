@@ -251,7 +251,7 @@ export default function Profile({ params }) {
         var formData = {
           customer_id: customer.id,
           data: averageData.join(','),
-          date: dateObject
+          date: formattedDateString
         };
         try {
           const response = await axios.post(`${API_URL}customer/bio/save`, formData, {
