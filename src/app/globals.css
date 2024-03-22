@@ -216,6 +216,9 @@ button {
   border-left: 0;
   border-right: 0;
 }
+.hover-cursor {
+  cursor: pointer;
+}
 @media (max-width: 767px) {
   .header button {
     min-width: 35px;

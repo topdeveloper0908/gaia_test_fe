@@ -1,6 +1,7 @@
 "use client";
 import React, { use, useState, useEffect } from "react";
 import { useFormik } from "formik";
+import Cookies from "js-cookie";
 import * as Yup from "yup";
 
 import { toast } from "react-toastify";
@@ -35,6 +36,7 @@ export default function AddPractitioner({
     SPECIALTY: "Specialty",
     TAGS: "Tags",
   };
+  const token = Cookies.get("token");
   const [type, setType] = useState(SELECT_TYPES.SPECIALTY);
   const [selectedSpecialty, setSelectedSpecialty] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -151,6 +153,7 @@ export default function AddPractitioner({
       {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `${token}`
         },
       }
     );

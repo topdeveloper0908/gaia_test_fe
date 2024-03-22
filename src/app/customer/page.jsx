@@ -16,8 +16,6 @@ export function Customer() {
 
 export default function SuspenseUser() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Customer />
-    </Suspense>
+    <Customer />
   );
 }

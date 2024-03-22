@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Cookies from "js-cookie";
 import AnchorLink from "react-anchor-link-smooth-scroll";
 import {
   Box,
@@ -37,6 +38,7 @@ const StyledRating = styled(Rating)({
 export default function Profile({ params }) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  const token = Cookies.get("token");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,6 +54,7 @@ export default function Profile({ params }) {
       const response = await axios.post(`${API_URL}user`, formData, {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `${token}`
         },
       });
       console.log(response.data[0]);
@@ -83,6 +86,9 @@ export default function Profile({ params }) {
       setData(dataTmp);
       setLoading(false);
     } catch (error) {
+      if (error?.response?.status === 403 || error?.response?.status === 401) {
+        window.location.href = "/login";
+      }
       console.error("Error fetching data:", error);
     }
   };

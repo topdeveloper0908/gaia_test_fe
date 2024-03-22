@@ -42,7 +42,7 @@ import dayjs from 'dayjs';
 import { House, Logout } from "@mui/icons-material";
 
 import Loading from "@/components/Loading";
-import RecommendationTable from "@/components/customer/RecommendationTable";
+import BioWellDashboard from "@/components/customer/biowell/Dashboard";
 import RecommendData from "@/Json/data.json"
 
 import DayResult from "@/components/customer/heartcloud/DayResult"
@@ -91,17 +91,12 @@ export default function Profile({ params }) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const theme = useTheme();
-  const [modalDateIsOpen, setModalDateIsOpen] = useState(false)
-  const [clickedInput, setClickedInput] = useState(null);
-  const [excelData, setExcelData] = React.useState([]);
-  const [date, setDate] = React.useState(dayjs());
-  const [data, setData] = React.useState([]);
-  const [currentData, setCurrentData] = React.useState();
-  const [rangeType, setRangeType] = React.useState('day');
+  const token = Cookies.get("token");
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bioData, setBioData] = useState(null);
   const [open, setOpen] = React.useState(true);
-  const [page, setPage] = React.useState("home");
+  const [page, setPage] = React.useState(null);
   const [countries, setCountries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAPI, setSelectedAPI] = React.useState([]);
@@ -173,7 +168,11 @@ export default function Profile({ params }) {
     } else {
       setIsSubmitting(true);
       await axios
-        .post(`${API_URL}customer/update`, values)
+        .post(`${API_URL}customer/update`, values, {
+          headers: {
+            Authorization: `${token}`,
+          },
+        })
         .then((res) => {
           toast.success(
             `Customer updated successfully`
@@ -181,6 +180,9 @@ export default function Profile({ params }) {
           setCustomer(values);
         })
         .catch((err) => {
+          if (err?.response?.status === 403 || err?.response?.status === 401) {
+            window.location.href = "/login";
+          }
           console.log(err);
           toast.error("Failed to update user");
         });
@@ -209,28 +211,10 @@ export default function Profile({ params }) {
   const handleDrawerOpen = () => {
     setOpen(!open);
   };
-
-  const convertDate = (currentSeconds) => {
-    const date = new Date(currentSeconds * 1000); // Convert timestamp to milliseconds
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-
-    const formattedDate = monthNames[date.getMonth()] + ' ' + ('0' + date.getDate()).slice(-2);
-
-    return formattedDate;
-  }
-
   
   // Bio - Well API
-  const handleDatePicker = (e) => {
-    setClickedInput(e.target.id)
-    setModalDateIsOpen(true)
-  }
 
-  const dateRangeChange = (event) => {
-    setRangeType(event.target.value);
-  };
+
   // File Input
   const handleFileChange = async (event) => {
     const uploadedFiles = event.target.files;
@@ -241,14 +225,19 @@ export default function Profile({ params }) {
 
       reader.onload = async (e) => {
         const fileContent = e.target.result;
+        const fileName = file.name;
+        const fileNameParts = fileName.split(' - '); // Split the string at ' - '
+        const dateString = fileNameParts[0]; // Get the first part
+        const formattedDateString = dateString.replace('_', ':'); // Replace underscore with colon
+        const dateObject = new Date(formattedDateString);
+
         const rows = fileContent.split('\n');
         if(customer?.sex == 'Male') {
           if(rows.length !== 1485) {
             toast.error("Uploaded File is not correct");
             return;
           }
-        }
-        else if(rows.length !== 1484) {
+        } else if(rows.length !== 1484) {
           toast.error("Uploaded File is not correct");
           return;
         }
@@ -259,33 +248,25 @@ export default function Profile({ params }) {
             averageData.push(rows[element.index + 1]);
           }
         });
-        const formData = {
-          customer_id: params.id,
+        var formData = {
+          customer_id: customer.id,
           data: averageData.join(','),
-          date: date.format('YYYY-MM-DD')
+          date: dateObject
         };
         try {
-          const response = await axios.post(`${API_URL}customer/data/save`, formData, {
+          const response = await axios.post(`${API_URL}customer/bio/save`, formData, {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `${token}`,
           },
         });
-          var tmp = data;
           formData.id = response.data;
-          if(data.length == 0) {
-            toast.success("Created successfully");
-            tmp.push(formData);
-          }
-          else if(response.data > data[data.length-1].id) {
-            toast.success("Created successfully");
-            tmp.push(formData);
-          } else {
-            toast.success("Updated successfully");
-            tmp[response.data].data = formData.data;
-          }
-          setData(tmp);
-          setCurrentData(formData);
+          console.log(bioData);
+          setBioData([...bioData, {...formData, date: formattedDateString}]);
         } catch (error) {
+            if (error?.response?.status === 403 || error?.response?.status === 401) {
+              window.location.href = "/login";
+            }
             console.error("Error fetching data:", error);
         }
       };
@@ -308,118 +289,111 @@ export default function Profile({ params }) {
         const response = await axios.post(`${API_URL}customer`, formData, {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `${token}`,
         },
       });
-        console.log('response', response.data);
         setCustomer(response.data[0]);
-        // setData(response.data[1]);
-        // setHeartData(response.data[2]);
-        // if(response.data[1].length > 0) {
-        //   response.data[1].forEach(element => {
-        //     if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
-        //       setCurrentData(element);
-        //     }
-        //   });
-        // }
         setLoading(false);
     } catch (error) {
+        if (error?.response?.status === 403 || error?.response?.status === 401) {
+          window.location.href = "/login";
+        }
         console.error("Error fetching data:", error);
     }
   };
 
-  React.useEffect(() => {
-    var found = false;
-    data.forEach(element => {
-      if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
-        setCurrentData(element);
-        found = true;
-      }
-    });
-    if(found == false) {
-      setCurrentData(null);
-    }
-  }, [date]);
+  // React.useEffect(() => {
+  //   var found = false;
+  //   data.forEach(element => {
+  //     if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
+  //       setCurrentData(element);
+  //       found = true;
+  //     }
+  //   });
+  //   if(found == false) {
+  //     setCurrentData(null);
+  //   }
+  // }, [date]);
+
+  // React.useEffect(() => {
+  //   if(rangeType === 'week') {
+  //     const endDate = dayjs();
+  //     const startDate = endDate.subtract(7, 'day');
+  //     var tmp1 = [];
+  //     var tmp2 = [];
+  //     var tmpAverage1;
+  //     var found = 0;
+  //     data.forEach(element => {
+  //       tmpAverage1 = element;
+  //       const selectedDate = dayjs(element.date);
+  //       if(selectedDate.isBetween(startDate, endDate)) {
+  //         element.data.split(',').forEach((subElement, subIndex) => {
+  //           if(found == 0) {
+  //             tmp1.push(parseFloat(subElement.split(';')[2]));
+  //             tmp2.push(parseFloat(subElement.split(';')[3]));
+  //           } else {
+  //             tmp1[subIndex] += parseFloat(subElement.split(';')[2]);
+  //             tmp2[subIndex] += parseFloat(subElement.split(';')[3]);
+  //           }
+  //         });
+  //         found++;
+  //       }
+  //     });
+  //     var tmpAverage2 = [];
+  //     tmpAverage1.data.split(',').forEach((element, index) => {
+  //       var tmp = element.split(';');
+  //       tmp[2] = parseFloat((tmp1[index]/found).toFixed(2));
+  //       tmp[3] = parseFloat((tmp2[index]/found).toFixed(2));
+  //       tmpAverage2.push(tmp.join(';'));
+  //     });
+  //     setCurrentData({data: tmpAverage2.join(',')});
+  //   }
+  //   if(rangeType === 'month') {
+  //     const endDate = dayjs();
+  //     const startDate = endDate.subtract(30, 'day');
+  //     var tmp1 = [];
+  //     var tmp2 = [];
+  //     var tmpAverage1;
+  //     var found = 0;
+  //     data.forEach(element => {
+  //       tmpAverage1 = element;
+  //       const selectedDate = dayjs(element.date);
+  //       if(selectedDate.isBetween(startDate, endDate)) {
+  //         element.data.split(',').forEach((subElement, subIndex) => {
+  //           if(found == 0) {
+  //             tmp1.push(parseFloat(subElement.split(';')[2]));
+  //             tmp2.push(parseFloat(subElement.split(';')[3]));
+  //           } else {
+  //             tmp1[subIndex] += parseFloat(subElement.split(';')[2]);
+  //             tmp2[subIndex] += parseFloat(subElement.split(';')[3]);
+  //           }
+  //         });
+  //         found++;
+  //       }
+  //     });
+  //     var tmpAverage2 = [];
+  //     tmpAverage1.data.split(',').forEach((element, index) => {
+  //       var tmp = element.split(';');
+  //       tmp[2] = parseFloat((tmp1[index]/found).toFixed(2));
+  //       tmp[3] = parseFloat((tmp2[index]/found).toFixed(2));
+  //       tmpAverage2.push(tmp.join(';'));
+  //     });
+  //     setCurrentData({data: tmpAverage2.join(',')});
+  //   }
+  //   if(rangeType === 'day') {
+  //     data.forEach(element => {
+  //       if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
+  //         setCurrentData(element);
+  //         found = true;
+  //       }
+  //     });
+  //     if(found == false) {
+  //       setCurrentData(null);
+  //     }
+  //   }
+  // }, [rangeType]);
 
   React.useEffect(() => {
-    if(rangeType === 'week') {
-      const endDate = dayjs();
-      const startDate = endDate.subtract(7, 'day');
-      var tmp1 = [];
-      var tmp2 = [];
-      var tmpAverage1;
-      var found = 0;
-      data.forEach(element => {
-        tmpAverage1 = element;
-        const selectedDate = dayjs(element.date);
-        if(selectedDate.isBetween(startDate, endDate)) {
-          element.data.split(',').forEach((subElement, subIndex) => {
-            if(found == 0) {
-              tmp1.push(parseFloat(subElement.split(';')[2]));
-              tmp2.push(parseFloat(subElement.split(';')[3]));
-            } else {
-              tmp1[subIndex] += parseFloat(subElement.split(';')[2]);
-              tmp2[subIndex] += parseFloat(subElement.split(';')[3]);
-            }
-          });
-          found++;
-        }
-      });
-      var tmpAverage2 = [];
-      tmpAverage1.data.split(',').forEach((element, index) => {
-        var tmp = element.split(';');
-        tmp[2] = parseFloat((tmp1[index]/found).toFixed(2));
-        tmp[3] = parseFloat((tmp2[index]/found).toFixed(2));
-        tmpAverage2.push(tmp.join(';'));
-      });
-      setCurrentData({data: tmpAverage2.join(',')});
-    }
-    if(rangeType === 'month') {
-      const endDate = dayjs();
-      const startDate = endDate.subtract(30, 'day');
-      var tmp1 = [];
-      var tmp2 = [];
-      var tmpAverage1;
-      var found = 0;
-      data.forEach(element => {
-        tmpAverage1 = element;
-        const selectedDate = dayjs(element.date);
-        if(selectedDate.isBetween(startDate, endDate)) {
-          element.data.split(',').forEach((subElement, subIndex) => {
-            if(found == 0) {
-              tmp1.push(parseFloat(subElement.split(';')[2]));
-              tmp2.push(parseFloat(subElement.split(';')[3]));
-            } else {
-              tmp1[subIndex] += parseFloat(subElement.split(';')[2]);
-              tmp2[subIndex] += parseFloat(subElement.split(';')[3]);
-            }
-          });
-          found++;
-        }
-      });
-      var tmpAverage2 = [];
-      tmpAverage1.data.split(',').forEach((element, index) => {
-        var tmp = element.split(';');
-        tmp[2] = parseFloat((tmp1[index]/found).toFixed(2));
-        tmp[3] = parseFloat((tmp2[index]/found).toFixed(2));
-        tmpAverage2.push(tmp.join(';'));
-      });
-      setCurrentData({data: tmpAverage2.join(',')});
-    }
-    if(rangeType === 'day') {
-      data.forEach(element => {
-        if(date.format('YYYY-MM-DD') == dayjs(element.date).format('YYYY-MM-DD')) {
-          setCurrentData(element);
-          found = true;
-        }
-      });
-      if(found == false) {
-        setCurrentData(null);
-      }
-    }
-  }, [rangeType]);
-
-  React.useEffect(() => {
-    console.log('customer', customer);
     if(page == 'heartCloud') {
       if(customer.h_token == null || customer.h_token == '') {
         integrateHeartAPI();
@@ -430,6 +404,8 @@ export default function Profile({ params }) {
         setHeartRangeType('day');
         getHeartData('day');
       }
+    } else if(page == 'bio') {
+      getBioAllData();
     }
   }, [page]);
 
@@ -447,6 +423,7 @@ export default function Profile({ params }) {
         const response = await axios.post(`${API_URL}integrate/heart`, formData, {
         headers: {
             "Content-Type": "application/json",
+            Authorization: `${token}`,
         },
     });
       if(response.data.indexOf('failed_') > -1) {
@@ -460,7 +437,7 @@ export default function Profile({ params }) {
           });
           setPage('home');
       } else {
-          toast.succss("Integration successful!", {
+          toast.success("Integration successful!", {
               position: "top-right",
               autoClose: 5000,
               hideProgressBar: false,
@@ -468,9 +445,12 @@ export default function Profile({ params }) {
               pauseOnHover: true,
               draggable: true,
           });
-          setCustomer({...tmpCustomer, h_token: response.data})
+          setCustomer({...customer, h_token: response.data})
       }
     } catch (error) {
+        if (error?.response?.status === 403 || error?.response?.status === 401) {
+          window.location.href = "/login";
+        }
         console.error("Error fetching data:", error);
     }
     setLoadingText('Loading...')
@@ -514,13 +494,42 @@ export default function Profile({ params }) {
         formData.endDate = heart_endDate;
     }
     await axios
-      .post(`${API_URL}api/heart`, formData)
+      .post(`${API_URL}api/heart`, formData, {
+        headers: {
+          Authorization: `${token}`,
+        },
+      })
       .then((res) => {
         setHeartData(res.data['Sessions']);
       })
       .catch((err) => {
+        if (err?.response?.status === 403 || err?.response?.status === 401) {
+          window.location.href = "/login";
+        }
         console.log(err);
       });
+    setLoading(false);
+  }
+
+  const getBioAllData = async () => {
+    setLoading(true);
+    const formData = {
+      id: customer.id,
+    };
+    try {
+        const response = await axios.post(`${API_URL}customer/bio`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      });
+        setBioData(response.data)
+    } catch (error) {
+        if (error?.response?.status === 403 || error?.response?.status === 401) {
+          window.location.href = "/login";
+        }
+        console.error("Error fetching data:", error);
+    }
     setLoading(false);
   }
 
@@ -552,391 +561,363 @@ export default function Profile({ params }) {
                 <Container className="container">
                   {
                       page === 'profile' && (
-                        <Box>
-                          <Stack direction="row" justifyContent={"center"} mt={10} mb={4}>
-                            <Typography
-                              sx={{ fontWeight: "bold", color: "black" }}
-                              variant={"h5"}
+                          <Box>
+                            <Stack direction="row" justifyContent={"center"} mt={10} mb={4}>
+                              <Typography
+                                sx={{ fontWeight: "bold", color: "black" }}
+                                variant={"h5"}
+                              >
+                                Edit Customer
+                              </Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent={"center"} mt={6} mb={4}>
+                              <Typography
+                                sx={{ fontWeight: "bold", color: "black" }}
+                                variant={"h5"}
+                              >
+                                Edit Profile
+                              </Typography>
+                            </Stack>
+                            <Grid
+                              container
+                              spacing={4}
+                              justifyContent={"center"}
+                              component={"form"}
+                              onSubmit={formik.handleSubmit}
                             >
-                              Edit Customer
-                            </Typography>
-                          </Stack>
-                          <Stack direction="row" justifyContent={"center"} mt={6} mb={4}>
-                            <Typography
-                              sx={{ fontWeight: "bold", color: "black" }}
-                              variant={"h5"}
-                            >
-                              Edit Profile
-                            </Typography>
-                          </Stack>
-                          <Grid
-                            container
-                            spacing={4}
-                            justifyContent={"center"}
-                            component={"form"}
-                            onSubmit={formik.handleSubmit}
-                          >
-                            <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="firstname"
-                                  label="First Name"
-                                  name="firstname"
-                                  autoComplete="firstname"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.firstname}
-                                  required
-                                />
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="lastname"
-                                  label="Last Name"
-                                  name="lastname"
-                                  autoComplete="lastname"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.lastname}
-                                  required
-                                />
-                              </Stack>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="email"
-                                  label="Email Address"
-                                  name="email"
-                                  autoComplete="email"
-                                  autoFocus
-                                  type="email"
-                                  required
-                                  onChange={formik.handleChange}
-                                  value={formik.values.email}
-                                />
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="phone"
-                                  label="Phone"
-                                  name="phone"
-                                  autoComplete="phone"
-                                  autoFocus
-                                  type="text"
-                                  required
-                                  onChange={formik.handleChange}
-                                  value={formik.values.phone}
-                                />
-                              </Stack>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="password"
-                                  label="Password"
-                                  name="password"
-                                  autoComplete="password"
-                                  autoFocus
-                                  type="password"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.password}
-                                />
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="passwordConfirm"
-                                  label="Confirm Password"
-                                  name="passwordConfirm"
-                                  autoComplete="passwordConfirm"
-                                  autoFocus
-                                  type="password"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.passwordConfirm}
-                                />
-                              </Stack>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <FormControl fullWidth>
-                                  <InputLabel id="demo-simple-select-label">Sex</InputLabel>
-                                  <Select
+                              <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <TextField
                                     size="small"
-                                    labelId="demo-simple-select-label"
-                                    id="demo-simple-select"
-                                    label="Sex"
-                                    name="sex"
-                                    onChange={formik.handleChange}
-                                    value={formik.values.sex}
-                                  >
-                                    <MenuItem value="Male" selected>
-                                      Male
-                                    </MenuItem>
-                                    <MenuItem value="Female">Female</MenuItem>
-                                  </Select>
-                                </FormControl>
-                              </Stack>
-                            </Grid>
-                            <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
-                              <Stack>
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  id="address"
-                                  label="Address"
-                                  name="address"
-                                  autoComplete="address"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.address}
-                                />
-                              </Stack>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  id="city"
-                                  label="City"
-                                  name="city"
-                                  autoComplete="city"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.city}
-                                />
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  id="state"
-                                  label="State"
-                                  name="state"
-                                  autoComplete="state"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.state}
-                                />
-                              </Stack>
-                              <Stack direction="row" spacing={2}>
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  id="zipcode"
-                                  label="Zipcode"
-                                  name="zipcode"
-                                  autoComplete="zipcode"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.zipcode}
-                                />
-                                <FormControl fullWidth>
-                                  <InputLabel id="demo-simple-select-label">Country</InputLabel>
-                                  <Select
-                                    size="small"
+                                    margin="normal"
                                     fullWidth
-                                    id="country"
-                                    label="Country"
-                                    name="country"
-                                    autoComplete="country"
-                                    placeholder="Select Country"
+                                    id="firstname"
+                                    label="First Name"
+                                    name="firstname"
+                                    autoComplete="firstname"
                                     autoFocus
                                     type="text"
                                     onChange={formik.handleChange}
-                                    value={formik.values.country}
-                                  >
-                                    {countries.map((country) => (
-                                      <MenuItem value={country.value} key={country.value}>
-                                        {country.text}
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                              </Stack>
-                              <Stack>
-                                <FormControl fullWidth>
-                                    <InputLabel size="small" id="demo-multiple-checkbox-label">API List</InputLabel>
-                                    <Select
-                                    fullWidth
-                                    labelId="demo-multiple-checkbox-label"
-                                    id="demo-multiple-checkbox"
-                                    multiple
+                                    value={formik.values.firstname}
+                                    required
+                                  />
+                                  <TextField
                                     size="small"
-                                    value={selectedAPI}
-                                    onChange={apiListhandleChange}
-                                    input={<OutlinedInput label="API List" />}
-                                    renderValue={(selected) => selected.join(', ')}
+                                    margin="normal"
+                                    fullWidth
+                                    id="lastname"
+                                    label="Last Name"
+                                    name="lastname"
+                                    autoComplete="lastname"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.lastname}
+                                    required
+                                  />
+                                </Stack>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="email"
+                                    label="Email Address"
+                                    name="email"
+                                    autoComplete="email"
+                                    autoFocus
+                                    type="email"
+                                    required
+                                    onChange={formik.handleChange}
+                                    value={formik.values.email}
+                                  />
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="phone"
+                                    label="Phone"
+                                    name="phone"
+                                    autoComplete="phone"
+                                    autoFocus
+                                    type="text"
+                                    required
+                                    onChange={formik.handleChange}
+                                    value={formik.values.phone}
+                                  />
+                                </Stack>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="password"
+                                    label="Password"
+                                    name="password"
+                                    autoComplete="password"
+                                    autoFocus
+                                    type="password"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.password}
+                                  />
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="passwordConfirm"
+                                    label="Confirm Password"
+                                    name="passwordConfirm"
+                                    autoComplete="passwordConfirm"
+                                    autoFocus
+                                    type="password"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.passwordConfirm}
+                                  />
+                                </Stack>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <FormControl fullWidth>
+                                    <InputLabel id="demo-simple-select-label">Sex</InputLabel>
+                                    <Select
+                                      size="small"
+                                      labelId="demo-simple-select-label"
+                                      id="demo-simple-select"
+                                      label="Sex"
+                                      name="sex"
+                                      onChange={formik.handleChange}
+                                      value={formik.values.sex}
                                     >
-                                    {apiList.map((name) => (
-                                        <MenuItem key={name} value={name}>
-                                        <Checkbox checked={selectedAPI.indexOf(name) > -1} />
-                                        <ListItemText primary={name} />
-                                        </MenuItem>
-                                    ))}
+                                      <MenuItem value="Male" selected>
+                                        Male
+                                      </MenuItem>
+                                      <MenuItem value="Female">Female</MenuItem>
                                     </Select>
-                                </FormControl>
-                               </Stack>
-                            </Grid>
-                            <Grid item md={12}>
-                              <Stack direction="row" justifyContent={"center"} mt={3}>
-                                <Typography
-                                  sx={{ fontWeight: "bold", color: "black" }}
-                                  variant={"h5"}
+                                  </FormControl>
+                                </Stack>
+                              </Grid>
+                              <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+                                <Stack>
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    id="address"
+                                    label="Address"
+                                    name="address"
+                                    autoComplete="address"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.address}
+                                  />
+                                </Stack>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    id="city"
+                                    label="City"
+                                    name="city"
+                                    autoComplete="city"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.city}
+                                  />
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    id="state"
+                                    label="State"
+                                    name="state"
+                                    autoComplete="state"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.state}
+                                  />
+                                </Stack>
+                                <Stack direction="row" spacing={2}>
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    id="zipcode"
+                                    label="Zipcode"
+                                    name="zipcode"
+                                    autoComplete="zipcode"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.zipcode}
+                                  />
+                                  <FormControl fullWidth>
+                                    <InputLabel id="demo-simple-select-label">Country</InputLabel>
+                                    <Select
+                                      size="small"
+                                      fullWidth
+                                      id="country"
+                                      label="Country"
+                                      name="country"
+                                      autoComplete="country"
+                                      placeholder="Select Country"
+                                      autoFocus
+                                      type="text"
+                                      onChange={formik.handleChange}
+                                      value={formik.values.country}
+                                    >
+                                      {countries.map((country) => (
+                                        <MenuItem value={country.value} key={country.value}>
+                                          {country.text}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                </Stack>
+                                <Stack>
+                                  <FormControl fullWidth>
+                                      <InputLabel size="small" id="demo-multiple-checkbox-label">API List</InputLabel>
+                                      <Select
+                                      fullWidth
+                                      labelId="demo-multiple-checkbox-label"
+                                      id="demo-multiple-checkbox"
+                                      multiple
+                                      size="small"
+                                      value={selectedAPI}
+                                      onChange={apiListhandleChange}
+                                      input={<OutlinedInput label="API List" />}
+                                      renderValue={(selected) => selected.join(', ')}
+                                      >
+                                      {apiList.map((name) => (
+                                          <MenuItem key={name} value={name}>
+                                          <Checkbox checked={selectedAPI.indexOf(name) > -1} />
+                                          <ListItemText primary={name} />
+                                          </MenuItem>
+                                      ))}
+                                      </Select>
+                                  </FormControl>
+                                </Stack>
+                              </Grid>
+                              <Grid item md={12}>
+                                <Stack direction="row" justifyContent={"center"} mt={3}>
+                                  <Typography
+                                    sx={{ fontWeight: "bold", color: "black" }}
+                                    variant={"h5"}
+                                  >
+                                    Edit HeartCloud API Information
+                                  </Typography>
+                                </Stack>
+                              </Grid>
+                              <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="h_email"
+                                    label="Email"
+                                    name="h_email"
+                                    autoComplete="h_email"
+                                    autoFocus
+                                    type="email"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.h_email}
+                                  />
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="h_password"
+                                    label="Password"
+                                    name="h_password"
+                                    autoComplete="h_password"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.h_password}
+                                  />
+                                </Stack>
+                              </Grid>
+                              <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
+                                <Stack direction="row" spacing={2} justifyContent={"center"}>
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="h_key"
+                                    label="API Key"
+                                    name="h_key"
+                                    autoComplete="h_key"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.h_key}
+                                  />
+                                  <TextField
+                                    size="small"
+                                    margin="normal"
+                                    fullWidth
+                                    id="h_id"
+                                    label="Client ID"
+                                    name="h_id"
+                                    autoComplete="h_id"
+                                    autoFocus
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.h_id}
+                                  />
+                                </Stack>
+                              </Grid>
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
+                                <Button
+                                  type="submit"
+                                  variant="contained"
+                                  sx={{ m: 4, py: 2, px: 4 }}
+                                  disabled={isSubmitting}
+                                  size="large"
                                 >
-                                  Edit HeartCloud API Information
-                                </Typography>
-                              </Stack>
+                                  {isSubmitting ? "Submitting..." : "Update"}
+                                </Button>
+                              </Box>
                             </Grid>
-                            <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="h_email"
-                                  label="Email"
-                                  name="h_email"
-                                  autoComplete="h_email"
-                                  autoFocus
-                                  type="email"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.h_email}
-                                />
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="h_password"
-                                  label="Password"
-                                  name="h_password"
-                                  autoComplete="h_password"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.h_password}
-                                />
-                              </Stack>
-                            </Grid>
-                            <Grid item md={6} gap={4} display={"flex"} flexDirection={"column"}>
-                              <Stack direction="row" spacing={2} justifyContent={"center"}>
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="h_key"
-                                  label="API Key"
-                                  name="h_key"
-                                  autoComplete="h_key"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.h_key}
-                                />
-                                <TextField
-                                  size="small"
-                                  margin="normal"
-                                  fullWidth
-                                  id="h_id"
-                                  label="Client ID"
-                                  name="h_id"
-                                  autoComplete="h_id"
-                                  autoFocus
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.h_id}
-                                />
-                              </Stack>
-                            </Grid>
-                            <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
-                              <Button
-                                type="submit"
-                                variant="contained"
-                                sx={{ m: 4, py: 2, px: 4 }}
-                                disabled={isSubmitting}
-                                size="large"
-                              >
-                                {isSubmitting ? "Submitting..." : "Update"}
-                              </Button>
-                            </Box>
-                          </Grid>
-                        </Box>
+                          </Box>
                       )
                   }
                   {
-                      page === 'home' && (
+                      page === 'bio' && (
                           <>
                             <Typography
                               textAlign='center'
-                              sx={{ fontWeight: "bold", color: "black" }}
+                              sx={{ fontWeight: "bold", color: "black", mt: '5rem' }}
                               variant={"h5"}
                             >
-                              Recommendation Dashboard
+                              BioWell Dashboard
                             </Typography>
-                            <Box mt={6} pb={4} display='flex' alignItems='center' justifyContent='space-between'>
-                              <Box display='flex'>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DemoContainer components={['DatePicker']}>
-                                        <DatePicker
-                                            label="Date picker"
-                                            value={date}
-                                            disabled={rangeType != 'day'}
-                                            onChange={(newValue) => setDate(newValue)}
-                                        />
-                                    </DemoContainer>
-                                </LocalizationProvider>
-                                <FormControl sx={{mt: '.5rem', ml: '1rem', width: '10rem'}}>
-                                  <InputLabel id="demo-simple-select-label">Select Range</InputLabel>
-                                  <Select
-                                    labelId="demo-simple-select-label"
-                                    id="demo-simple-select"
-                                    label="Select Date Range"
-                                    value={rangeType}
-                                    onChange={dateRangeChange}
-                                  >
-                                    <MenuItem value="day" selected>
-                                      One Day
-                                    </MenuItem>
-                                    <MenuItem value="week">Last Week</MenuItem>
-                                    <MenuItem value="month">Last Month</MenuItem>
-                                  </Select>
-                                </FormControl>
-                              </Box>
+                            <Box mt={6} pb={4} display='flex' alignItems='center' justifyContent='end'>
                               <Button
                                 component="label"
                                 role={undefined}
                                 variant="contained"
                                 tabIndex={-1}
-                                disabled={rangeType != 'day'}
                                 startIcon={<CloudUploadIcon />}
                               >
-                                Upload file
-                                <VisuallyHiddenInput type="file" onChange={handleFileChange} accept=".csv, .xlsx"/>
+                                Upload files
+                                <VisuallyHiddenInput type="file" onChange={handleFileChange} multiple accept=".csv, .xlsx"/>
                               </Button>
                             </Box>
                             {
-                              currentData === null ? 
-                                <>
-                                  <Typography
-                                    align="center"
-                                    variant={"h5"}
-                                    mt={4}
-                                  >
-                                    There is no data to display
-                                  </Typography>
-                                </> : <RecommendationTable data={currentData?.data}/>
+                              bioData == null || bioData.length == 0 ? 
+                                <Typography
+                                  align="center"
+                                  variant={"h5"}
+                                  mt={4}
+                                >
+                                  There is no data to display
+                                </Typography> : 
+                                <BioWellDashboard data={bioData}></BioWellDashboard>
+                                // <RecommendationTable data={currentData?.data}/>
                             }
                           </>
                       )
                   }
+
                   {
                       page === 'heartCloud' && (
                           <>
@@ -949,7 +930,6 @@ export default function Profile({ params }) {
                             >
                               HeartCloud Data
                             </Typography>
-                       
                             <Box mt={6} display='flex' alignItems='center' justifyContent='space-between'>
                               <Box display='flex'>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -997,6 +977,26 @@ export default function Profile({ params }) {
                             {
                                 (heartRangeType === 'month' || heartRangeType === 'week' || heartRangeType === 'custom') && <CustomResult data={heartData}></CustomResult>
                             }
+                            {/* {
+                                heartData.length == 0 ? 
+                                <Typography
+                                    align="center"
+                                    variant={"h5"}
+                                    mt={10}
+                                >
+                                    There is no data to display
+                                </Typography> : 
+                                <LineChart
+                                xAxis={[{ data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }]}
+                                series={[
+                                    {
+                                    data: [2, 3, 5.5, 8.5, 1.5, 5, 1, 4, 3, 8]
+                                    },
+                                ]}
+                                width={1200}
+                                height={300}
+                                />
+                            } */}
                           </>
                       )
                   }
@@ -1019,10 +1019,10 @@ const Sidebar = ({
   }) => {
     var buttons = [
         {
-          name: "Recommendations",
+          name: "Bio-Well",
           icon: House,
-          onClick: () => setPage("home"),
-          active: page === "home"
+          onClick: () => setPage("bio"),
+          active: page === "bio"
         },
         {
           name: "Heart Cloud",
@@ -1041,6 +1041,9 @@ const Sidebar = ({
     ];
     if(customer?.apis?.split(',').indexOf('Heart Cloud') == -1) {
         buttons.splice(1, 1);
+    }
+    if(customer?.apis?.split(',').indexOf('Biowell API') == -1) {
+      buttons.splice(0, 1);
     }
     return (
       <Drawer

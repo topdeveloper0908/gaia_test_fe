@@ -232,6 +232,11 @@ export default function Dashboard({ isUser, isCustomer }) {
           const response = await axios.post(`${API_URL}updateDB`, {
             data: objectData,
             replace: replace,
+          }, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`
+            },
           });
           const result = response.data;
           if (result == "success") {
@@ -411,7 +416,7 @@ export default function Dashboard({ isUser, isCustomer }) {
         setCustomerData(res.data);
       })
       .catch((err) => {
-        if (err?.response?.status === 403) {
+        if (err?.response?.status === 403 || err?.response?.status === 401) {
           window.location.href = "/login";
         }
         console.log(err);
@@ -426,7 +431,12 @@ export default function Dashboard({ isUser, isCustomer }) {
   const handleSaveCustomer = async (newCustomer) => {
     setIsSubmitting(true);
     await axios
-      .post(`${API_URL}customer/update`, newCustomer)
+      .post(`${API_URL}customer/update`, newCustomer, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`
+        },
+      })
       .then((res) => {
         toast.success(
           `Customer updated successfully`

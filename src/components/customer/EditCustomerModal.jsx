@@ -174,7 +174,6 @@ export default function EditCustomerModal({
               type="password"
               onChange={formik.handleChange}
               value={formik.values.password}
-              required
             />
             <FormControl sx={{width: '50%'}}>
               <InputLabel id="demo-simple-select-label">Sex</InputLabel>

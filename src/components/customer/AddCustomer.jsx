@@ -72,6 +72,7 @@ export default function AddCustomer({addCustomer}) {
     h_email: Yup.string(),
     h_id: Yup.string(),
     h_password: Yup.string(),
+    h_code: Yup.string(),
     apis: Yup.array(),
   });
 
@@ -93,6 +94,7 @@ export default function AddCustomer({addCustomer}) {
     h_email: "",
     h_password: "",
     h_key: "",
+    h_code: "",
     apis: []
   };
 

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import Cookies from "js-cookie";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -82,6 +83,7 @@ export default function Profile({ params }) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const theme = useTheme();
+  const token = Cookies.get("token");
   const [modalDateIsOpen, setModalDateIsOpen] = useState(false)
   const [clickedInput, setClickedInput] = useState(null);
   const [excelData, setExcelData] = React.useState([]);
@@ -173,7 +175,12 @@ export default function Profile({ params }) {
     } else {
       setIsSubmitting(true);
       await axios
-        .post(`${API_URL}customer/update`, values)
+        .post(`${API_URL}customer/update`, values, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`
+          },
+        })
         .then((res) => {
           toast.success(
             `Customer updated successfully`
@@ -269,6 +276,7 @@ export default function Profile({ params }) {
           const response = await axios.post(`${API_URL}customer/data/save`, formData, {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `${token}`
           },
         });
           var tmp = data;
@@ -306,11 +314,11 @@ export default function Profile({ params }) {
     };
     try {
         const response = await axios.post(`${API_URL}customer`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      console.log(response);
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`
+          },
+        });
         formik.setValues({...response.data[0][0], password: ''});
         setCustomer(response.data[0][0]);
         setData(response.data[1]);
@@ -324,6 +332,9 @@ export default function Profile({ params }) {
         }
         setLoading(false);
     } catch (error) {
+        if (err?.response?.status === 403) {
+          window.location.href = "/login";
+        }
         console.error("Error fetching data:", error);
     }
   };
