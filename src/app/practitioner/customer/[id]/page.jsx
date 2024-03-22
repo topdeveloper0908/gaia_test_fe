@@ -394,6 +394,7 @@ export default function Profile({ params }) {
   // }, [rangeType]);
 
   React.useEffect(() => {
+    console.log(customer);
     if(page == 'heartCloud') {
       if(customer.h_token == null || customer.h_token == '') {
         integrateHeartAPI();
@@ -445,7 +446,10 @@ export default function Profile({ params }) {
               pauseOnHover: true,
               draggable: true,
           });
-          setCustomer({...customer, h_token: response.data})
+          const now = new Date();
+          const after20Days = new Date(now);
+          after20Days.setDate(now.getDate() + 20);
+          setCustomer({...customer, h_token: response.data, h_token_expried: after20Days})
       }
     } catch (error) {
         if (error?.response?.status === 403 || error?.response?.status === 401) {
